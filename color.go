@@ -34,9 +34,9 @@ func (c *Color) UnmarshalText(text []byte) error {
 		return NewErrUnknownColor(textStr)
 	}
 
-	for _, color := range AllColors {
+	for _, color := range AllColors() {
 		if color.Letter == textStr[0:1] {
-			*c = *color
+			*c = color
 			return nil
 		}
 	}
@@ -45,32 +45,28 @@ func (c *Color) UnmarshalText(text []byte) error {
 }
 
 var (
-	ColorRed = &Color{
+	ColorRed = Color{
 		Letter: "R",
 		Name:   "Red",
 	}
-	ColorBlue = &Color{
+	ColorBlue = Color{
 		Letter: "U",
 		Name:   "Blue",
 	}
-	ColorBlack = &Color{
+	ColorBlack = Color{
 		Letter: "B",
 		Name:   "Black",
 	}
-	ColorGreen = &Color{
+	ColorGreen = Color{
 		Letter: "G",
 		Name:   "Green",
 	}
-	ColorWhite = &Color{
+	ColorWhite = Color{
 		Letter: "W",
 		Name:   "White",
 	}
-
-	AllColors = []*Color{
-		ColorRed,
-		ColorBlue,
-		ColorBlack,
-		ColorGreen,
-		ColorWhite,
-	}
 )
+
+func AllColors() []Color {
+	return []Color{ColorRed, ColorBlue, ColorBlack, ColorGreen, ColorWhite}
+}

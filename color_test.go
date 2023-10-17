@@ -15,32 +15,32 @@ func Test_Color_UnmarshalText(t *testing.T) {
 	}{
 		{
 			Value:         "{R}",
-			Expected:      stax.ColorRed,
+			Expected:      &stax.ColorRed,
 			ExpectedError: nil,
 		},
 		{
 			Value:         "{W}",
-			Expected:      stax.ColorWhite,
+			Expected:      &stax.ColorWhite,
 			ExpectedError: nil,
 		},
 		{
 			Value:         "{U}",
-			Expected:      stax.ColorBlue,
+			Expected:      &stax.ColorBlue,
 			ExpectedError: nil,
 		},
 		{
 			Value:         "{B}",
-			Expected:      stax.ColorBlack,
+			Expected:      &stax.ColorBlack,
 			ExpectedError: nil,
 		},
 		{
 			Value:         "{G}",
-			Expected:      stax.ColorGreen,
+			Expected:      &stax.ColorGreen,
 			ExpectedError: nil,
 		},
 		{
 			Value:         "G",
-			Expected:      stax.ColorGreen,
+			Expected:      &stax.ColorGreen,
 			ExpectedError: nil,
 		},
 	}
