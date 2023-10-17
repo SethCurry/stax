@@ -56,7 +56,6 @@ linters:
     - gocheckcompilerdirectives
     - gochecknoglobals
     - gochecknoinits
-    - gochecksumtype
     - gocognit
     - goconst
     - gocritic
@@ -80,7 +79,6 @@ linters:
     - grouper
     - ifshort
     - importas
-    - inamedparam
     - ineffassign
     - interfacebloat
     - interfacer
@@ -107,7 +105,6 @@ linters:
     - prealloc
     - predeclared
     - promlinter
-    - protogetter
     - reassign
     - revive
     - rowserrcheck
@@ -120,7 +117,6 @@ linters:
     - tagliatelle
     - tenv
     - testableexamples
-    - testifylint
     - testpackage
     - thelper
     - tparallel
