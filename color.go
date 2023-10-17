@@ -5,17 +5,17 @@ import (
 	"strings"
 )
 
-func NewErrUnknownColor(symbol string) *ErrUnknownColor {
-	return &ErrUnknownColor{
+func NewUnknownColorError(symbol string) *UnknownColorError {
+	return &UnknownColorError{
 		Symbol: symbol,
 	}
 }
 
-type ErrUnknownColor struct {
+type UnknownColorError struct {
 	Symbol string
 }
 
-func (e *ErrUnknownColor) Error() string {
+func (e *UnknownColorError) Error() string {
 	return fmt.Sprintf("unknown color: %s", e.Symbol)
 }
 
@@ -31,42 +31,55 @@ func (c Color) Symbol() string {
 func (c *Color) UnmarshalText(text []byte) error {
 	textStr := strings.Trim(string(text), "{}")
 	if len(textStr) == 0 {
-		return NewErrUnknownColor(textStr)
+		return NewUnknownColorError(textStr)
 	}
 
 	for _, color := range AllColors() {
 		if color.Letter == textStr[0:1] {
 			*c = color
+
 			return nil
 		}
 	}
 
-	return NewErrUnknownColor(textStr[0:1])
+	return NewUnknownColorError(textStr[0:1])
 }
 
-var (
-	ColorRed = Color{
+func ColorRed() Color {
+	return Color{
 		Letter: "R",
 		Name:   "Red",
 	}
-	ColorBlue = Color{
+}
+
+func ColorBlue() Color {
+	return Color{
 		Letter: "U",
 		Name:   "Blue",
 	}
-	ColorBlack = Color{
+}
+
+func ColorBlack() Color {
+	return Color{
 		Letter: "B",
 		Name:   "Black",
 	}
-	ColorGreen = Color{
+}
+
+func ColorGreen() Color {
+	return Color{
 		Letter: "G",
 		Name:   "Green",
 	}
-	ColorWhite = Color{
+}
+
+func ColorWhite() Color {
+	return Color{
 		Letter: "W",
 		Name:   "White",
 	}
-)
+}
 
 func AllColors() []Color {
-	return []Color{ColorRed, ColorBlue, ColorBlack, ColorGreen, ColorWhite}
+	return []Color{ColorRed(), ColorBlue(), ColorBlack(), ColorGreen(), ColorWhite()}
 }

@@ -13,11 +13,17 @@ import (
 
 type ContentType string
 
-var (
-	ContentText      ContentType = "text"
-	ContentReference ContentType = "reference"
-	ContentSymbol    ContentType = "symbol"
-)
+func ContentText() ContentType {
+	return ContentType("text")
+}
+
+func ContentReference() ContentType {
+	return ContentType("reference")
+}
+
+func ContentSymbol() ContentType {
+	return ContentType("symbol")
+}
 
 func NewRules() *Rules {
 	return &Rules{
@@ -98,7 +104,7 @@ type ContentElement struct {
 	Value string      `json:"value"`
 }
 
-func scanLines(data []byte, atEOF bool) (advance int, token []byte, err error) {
+func scanLines(data []byte, atEOF bool) (int, []byte, error) {
 	if atEOF && len(data) == 0 {
 		return 0, nil, nil
 	}
@@ -158,13 +164,13 @@ func isExample(line string) (bool, error) {
 }
 
 func ParseRulesFile(path string) (*Rules, error) {
-	fd, err := os.Open(path)
+	fileDescriptor, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	defer fd.Close()
+	defer fileDescriptor.Close()
 
-	return ParseRules(fd)
+	return ParseRules(fileDescriptor)
 }
 
 func parseSectionLine(line string) (int, *Section, error) {
@@ -300,14 +306,14 @@ func parseContent(content string) []*ContentElement {
 		case '{':
 			if len(acc) > 0 {
 				elements = append(elements, &ContentElement{
-					Type:  ContentText,
+					Type:  ContentText(),
 					Value: acc,
 				})
 				acc = ""
 			}
 			value := scanner.ReadUntil([]rune{'}'})
 			elements = append(elements, &ContentElement{
-				Type:  ContentSymbol,
+				Type:  ContentSymbol(),
 				Value: value,
 			})
 			scanner.Next()
@@ -317,13 +323,13 @@ func parseContent(content string) []*ContentElement {
 			if refRegex.MatchString(maybeRef) {
 				if len(acc) > 0 {
 					elements = append(elements, &ContentElement{
-						Type:  ContentText,
+						Type:  ContentText(),
 						Value: acc,
 					})
 					acc = ""
 				}
 				elements = append(elements, &ContentElement{
-					Type:  ContentReference,
+					Type:  ContentReference(),
 					Value: maybeRef,
 				})
 			} else {
@@ -336,7 +342,7 @@ func parseContent(content string) []*ContentElement {
 
 	if len(acc) > 0 {
 		elements = append(elements, &ContentElement{
-			Type:  ContentText,
+			Type:  ContentText(),
 			Value: acc,
 		})
 	}
@@ -391,6 +397,7 @@ func ParseRules(reader io.Reader) (*Rules, error) {
 			}
 			currentSection = sect
 			rules.Sections[num] = sect
+
 			continue
 		}
 

@@ -5,23 +5,25 @@ import (
 	"strings"
 )
 
-func NewErrInvalidManaSymbol(problem string, symbol string) *ErrInvalidManaSymbol {
-	return &ErrInvalidManaSymbol{
+func NewInvalidManaSymbolError(problem string, symbol string) *InvalidManaSymbolError {
+	return &InvalidManaSymbolError{
 		Problem: problem,
 		Symbol:  symbol,
 	}
 }
 
-type ErrInvalidManaSymbol struct {
+type InvalidManaSymbolError struct {
 	Problem string
 	Symbol  string
 }
 
-func (e *ErrInvalidManaSymbol) Error() string {
+func (e *InvalidManaSymbolError) Error() string {
 	return fmt.Sprintf("invalid mana symbol: %s: %s", e.Problem, e.Symbol)
 }
 
-var _ Mana = &ManaColored{}
+var _ Mana = &ManaColored{
+	Color: nil,
+}
 
 type ManaColored struct {
 	Color *Color `json:"color"`
@@ -47,7 +49,9 @@ func (m ManaColorless) Colors() []*Color {
 	return []*Color{}
 }
 
-var _ Mana = &ManaGeneric{}
+var _ Mana = &ManaGeneric{
+	Amount: 0,
+}
 
 type ManaGeneric struct {
 	Amount int `json:"amount"`
@@ -56,16 +60,17 @@ type ManaGeneric struct {
 func (m ManaGeneric) Symbol() string {
 	if m.Amount == -1 {
 		return "{X}"
-	} else {
-		return fmt.Sprintf("{%d}", m.Amount)
 	}
+	return fmt.Sprintf("{%d}", m.Amount)
 }
 
 func (m ManaGeneric) Colors() []*Color {
 	return []*Color{}
 }
 
-var _ Mana = &ManaPhyrexian{}
+var _ Mana = &ManaPhyrexian{
+	Color: nil,
+}
 
 type ManaPhyrexian struct {
 	Color *Color `json:"color"`
@@ -79,7 +84,9 @@ func (m ManaPhyrexian) Colors() []*Color {
 	return []*Color{m.Color}
 }
 
-var _ Mana = &ManaHybrid{}
+var _ Mana = &ManaHybrid{
+	Color: nil,
+}
 
 type ManaHybrid struct {
 	Color []*Color `json:"colors"`
