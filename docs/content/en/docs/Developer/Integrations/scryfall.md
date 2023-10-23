@@ -1,0 +1,4 @@
+---
+title: Scryfall
+linkTitle: Scryfall
+---

@@ -1,0 +1,35 @@
+baseURL: "https://stax.scurry.io/"
+languageCode: "en-us"
+title: "Stax"
+
+contentDir: "content/en"
+defaultContentLanguage: "en"
+defaultContentLanguageIsSubdir: false
+enableMissingTranslationPlaceholders: true
+enableRobotsTXT: true
+enableGitInfo: true
+
+taxonomies:
+  tag: "tags"
+  category: "categories"
+
+params:
+  taxonomy:
+    taxonomyCloud:
+      - tags
+      - categories
+    taxonomyCloudTitle:
+      - Tag Cloud
+      - Categories
+    taxonomyPageHeader:
+      - tags
+      - categories
+    pygmentsCodeFences: true
+    pygmentsUseClasses: false
+    pygmentsUseClassic: false
+    pygmentsStyle: "tango"
+
+module:
+  imports:
+    - path: github.com/google/docsy
+    - path: github.com/google/docsy/dependencies

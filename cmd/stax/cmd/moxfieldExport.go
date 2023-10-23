@@ -1,6 +1,3 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -10,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/SethCurry/stax/moxfield"
-	"github.com/SethCurry/stax/xmage"
+	"github.com/SethCurry/stax/integrations/moxfield"
+	"github.com/SethCurry/stax/integrations/xmage"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )

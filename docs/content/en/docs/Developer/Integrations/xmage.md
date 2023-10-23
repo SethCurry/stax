@@ -1,0 +1,4 @@
+---
+title: XMage
+linkTitle: XMage
+---
