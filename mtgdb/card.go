@@ -71,7 +71,7 @@ func (c *CardClient) Create(
 
 	var cardID int
 
-	err = c.conn.QueryRowContext(ctx, query, queryVars...).Scan(&cardID)
+	err = c.client.conn.QueryRowContext(ctx, query, queryVars...).Scan(&cardID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new card in database: %w", err)
 	}

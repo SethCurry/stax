@@ -33,16 +33,16 @@ func Open(driverName, dataSourceName string) (*Client, error) {
 	}
 
 	return &Client{
-		&baseClient{
-			conn:         conn,
-			queryBuilder: queryBuilder,
-		},
+		conn:         conn,
+		queryBuilder: queryBuilder,
 	}, nil
 }
 
 // Client is the top-level interface for interacting with the database.
 // It primarily returns other model-specific structs.
 type Client struct {
+	conn         *sqlx.DB
+	queryBuilder squirrel.StatementBuilderType
 	*baseClient
 }
 

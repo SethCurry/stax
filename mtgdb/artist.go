@@ -25,7 +25,7 @@ func (a *ArtistClient) Create(ctx context.Context, name string) (*Artist, error)
 
 	var artistID int
 
-	err = a.conn.QueryRowContext(ctx, query, queryVars...).Scan(&artistID)
+	err = a.client.conn.QueryRowContext(ctx, query, queryVars...).Scan(&artistID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new artist: %w", err)
 	}
@@ -45,7 +45,7 @@ func (a *ArtistClient) Get(ctx context.Context, artistID int) (*Artist, error) {
 
 	var name string
 
-	err = a.conn.QueryRowContext(ctx, query, queryVars...).Scan(&name)
+	err = a.client.conn.QueryRowContext(ctx, query, queryVars...).Scan(&name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get artist %d by ID: %w", artistID, err)
 	}
@@ -65,7 +65,7 @@ func (a *ArtistClient) GetByName(ctx context.Context, name string) (*Artist, err
 
 	var artistID int
 
-	err = a.conn.QueryRowContext(ctx, query, queryVars...).Scan(&artistID)
+	err = a.client.conn.QueryRowContext(ctx, query, queryVars...).Scan(&artistID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get artist %q by name: %w", name, err)
 	}

@@ -27,7 +27,7 @@ func (s *SetClient) Create(ctx context.Context, name string, code string) (*Set,
 
 	var setID int
 
-	err = s.conn.QueryRowContext(ctx, query, queryVars...).Scan(&setID)
+	err = s.client.conn.QueryRowContext(ctx, query, queryVars...).Scan(&setID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new set in database: %w", err)
 	}
@@ -47,7 +47,7 @@ func (s *SetClient) Get(ctx context.Context, setID int) (*Set, error) {
 
 	var name, code string
 
-	err = s.conn.QueryRowContext(ctx, query, queryVars...).Scan(&name, &code)
+	err = s.client.conn.QueryRowContext(ctx, query, queryVars...).Scan(&name, &code)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get set %d by ID from database: %w", setID, err)
 	}
