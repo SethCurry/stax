@@ -1,6 +1,9 @@
-package magicdb
+package mtgdb
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 const tableSet = "set_"
 
@@ -19,37 +22,38 @@ func (s *SetClient) Create(ctx context.Context, name string, code string) (*Set,
 
 	query, queryVars, err := builder.ToSql()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to generate SQL query to create set: %w", err)
 	}
 
-	var id int
+	var setID int
 
-	err = s.conn.QueryRowContext(ctx, query, queryVars...).Scan(&id)
+	err = s.conn.QueryRowContext(ctx, query, queryVars...).Scan(&setID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create new set in database: %w", err)
 	}
 
-	set := newSet(s.baseClient, id, name, code)
+	set := newSet(s.baseClient, setID, name, code)
+
 	return set, nil
 }
 
-func (s *SetClient) Get(ctx context.Context, id int) (*Set, error) {
-	builder := s.queryBuilder.Select("name", "code").From(tableSet).Where("id = ?", id)
+func (s *SetClient) Get(ctx context.Context, setID int) (*Set, error) {
+	builder := s.queryBuilder.Select("name", "code").From(tableSet).Where("id = ?", setID)
 
 	query, queryVars, err := builder.ToSql()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to build SQL query to get set %d by ID: %w", setID, err)
 	}
 
-	var name string
-	var code string
+	var name, code string
 
 	err = s.conn.QueryRowContext(ctx, query, queryVars...).Scan(&name, &code)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get set %d by ID from database: %w", setID, err)
 	}
 
-	set := newSet(s.baseClient, id, name, code)
+	set := newSet(s.baseClient, setID, name, code)
+
 	return set, nil
 }
 

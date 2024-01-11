@@ -1,6 +1,9 @@
-package magicdb
+package mtgdb
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 func newArtistClient(base *baseClient) *ArtistClient {
 	return &ArtistClient{
@@ -17,36 +20,38 @@ func (a *ArtistClient) Create(ctx context.Context, name string) (*Artist, error)
 
 	query, queryVars, err := builder.ToSql()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to build SQL query to insert artist: %w", err)
 	}
 
-	var id int
+	var artistID int
 
-	err = a.conn.QueryRowContext(ctx, query, queryVars...).Scan(&id)
+	err = a.conn.QueryRowContext(ctx, query, queryVars...).Scan(&artistID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create new artist: %w", err)
 	}
 
-	artist := newArtist(a.baseClient, id, name)
+	artist := newArtist(a.baseClient, artistID, name)
+
 	return artist, nil
 }
 
-func (a *ArtistClient) Get(ctx context.Context, id int) (*Artist, error) {
-	builder := a.queryBuilder.Select("name").From("artist").Where("id = ?", id)
+func (a *ArtistClient) Get(ctx context.Context, artistID int) (*Artist, error) {
+	builder := a.queryBuilder.Select("name").From("artist").Where("id = ?", artistID)
 
 	query, queryVars, err := builder.ToSql()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to generate query to get artist by ID: %w", err)
 	}
 
 	var name string
 
 	err = a.conn.QueryRowContext(ctx, query, queryVars...).Scan(&name)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get artist %d by ID: %w", artistID, err)
 	}
 
-	artist := newArtist(a.baseClient, id, name)
+	artist := newArtist(a.baseClient, artistID, name)
+
 	return artist, nil
 }
 
@@ -55,23 +60,25 @@ func (a *ArtistClient) GetByName(ctx context.Context, name string) (*Artist, err
 
 	query, queryVars, err := builder.ToSql()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to build SQL query to get artist %q by name: %w", name, err)
 	}
 
-	var id int
+	var artistID int
 
-	err = a.conn.QueryRowContext(ctx, query, queryVars...).Scan(&id)
+	err = a.conn.QueryRowContext(ctx, query, queryVars...).Scan(&artistID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get artist %q by name: %w", name, err)
 	}
 
-	artist := newArtist(a.baseClient, id, name)
+	artist := newArtist(a.baseClient, artistID, name)
+
 	return artist, nil
 }
 
 func newArtist(base *baseClient, id int, name string) *Artist {
 	return &Artist{
 		ID:         id,
+		Name:       name,
 		baseClient: base,
 	}
 }

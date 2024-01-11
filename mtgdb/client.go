@@ -1,29 +1,37 @@
-package magicdb
+package mtgdb
 
 import (
+	"fmt"
+
 	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+
+	// sqlite3 driver.
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func Open(driverName, dataSourceName string) (*Client, error) {
 	conn, err := sqlx.Open(driverName, dataSourceName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("sqlx failed to open database: %w", err)
 	}
 
 	queryBuilder := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Question)
 
 	switch driverName {
 	case "sqlite3":
+		// enable foreign keys
 		_, err := conn.Exec("PRAGMA foreign_keys = ON;")
 		if err != nil {
 			conn.Close()
-			return nil, err
+
+			return nil, fmt.Errorf("failed to enable foreign keys on sqlite database: %w", err)
 		}
 	case "postgres":
+		// use correct variable format for postgres
 		queryBuilder = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 	}
+
 	return &Client{
 		&baseClient{
 			conn:         conn,
@@ -40,4 +48,12 @@ type Client struct {
 
 func (c *Client) Artists() *ArtistClient {
 	return newArtistClient(c.baseClient)
+}
+
+func (c *Client) Sets() *SetClient {
+	return newSetClient(c.baseClient)
+}
+
+func (c *Client) Cards() *CardClient {
+	return newCardClient(c.baseClient)
 }

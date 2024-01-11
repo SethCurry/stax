@@ -4,9 +4,11 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
@@ -46,8 +48,23 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	var err error
+
 	logger, err = zap.NewDevelopment()
 	if err != nil {
 		panic(err)
+	}
+
+	viper.SetConfigName("stax")
+	viper.AddConfigPath("$HOME/.config")
+	viper.AddConfigPath("$HOME/.local/share/stax")
+
+	err = viper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf("fatal error loading config file: %w", err))
+	}
+
+	err = viper.BindPFlags(rootCmd.PersistentFlags())
+	if err != nil {
+		panic(fmt.Errorf("fatal error binding flags: %w", err))
 	}
 }

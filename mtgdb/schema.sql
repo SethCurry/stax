@@ -1,21 +1,25 @@
-CREATE TABLE artist (
+CREATE TABLE IF NOT EXISTS artist (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL
 );
 
-CREATE TABLE set_ (
+CREATE TABLE IF NOT EXISTS set_ (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     code TEXT NOT NULL
 );
 
 
-CREATE TABLE card_ (
+CREATE TABLE IF NOT EXISTS card_ (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
-    oracle_text TEXT,
+    oracle_id TEXT NOT NULL,
+    rarity TEXT NOT NULL,
+    flavor_text TEXT NOT NULL,
+    oracle_text TEXT NOT NULL,
+    lang TEXT NOT NULL,
     cmc float,
-    power TEXT,
+    power_ TEXT,
     toughness TEXT,
     loyalty TEXT,
     mana_cost TEXT,
@@ -24,7 +28,7 @@ CREATE TABLE card_ (
     color_identity TEXT
 );
 
-CREATE TABLE printing (
+CREATE TABLE IF NOT EXISTS printing (
     id INTEGER PRIMARY KEY,
     artist_id INTEGER NOT NULL,
     set_id INTEGER NOT NULL,
@@ -35,7 +39,14 @@ CREATE TABLE printing (
     FOREIGN KEY (card_id) REFERENCES card_ (id)
 );
 
-CREATE TABLE ruling (
+CREATE TABLE IF NOT EXISTS printing_image (
+    id INTEGER PRIMARY KEY,
+    printing_id INTEGER NOT NULL,
+    image_url TEXT NOT NULL,
+    FOREIGN KEY (printing_id) REFERENCES printing (id)
+);
+
+CREATE TABLE IF NOT EXISTS ruling (
     id INTEGER PRIMARY KEY,
     card_id INTEGER NOT NULL,
     ruling_text TEXT NOT NULL,

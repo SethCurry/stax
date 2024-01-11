@@ -1,4 +1,4 @@
-package magicdb
+package mtgdb
 
 import (
 	"github.com/Masterminds/squirrel"
