@@ -1,3 +1,5 @@
+github.com/SethCurry/gofall v0.0.2 h1:jVZNDQYL2il3eIJ8nToFcYcEh5LD7Orr3ghW8MEY5r0=
+github.com/SethCurry/gofall v0.0.2/go.mod h1:9flYY2tZV+m+xyNRCXvsjxxvZfzpemk/3ocmwlfhKzY=
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
