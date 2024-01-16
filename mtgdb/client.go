@@ -1,6 +1,7 @@
 package mtgdb
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Masterminds/squirrel"
@@ -44,6 +45,15 @@ type Client struct {
 	conn         *sqlx.DB
 	queryBuilder squirrel.StatementBuilderType
 	*baseClient
+}
+
+func (c *Client) MigrateSchema(ctx context.Context) error {
+	_, err := c.conn.ExecContext(ctx, string(schema))
+	if err != nil {
+		return fmt.Errorf("failed to migrate schema: %w", err)
+	}
+
+	return nil
 }
 
 func (c *Client) Artists() *ArtistClient {

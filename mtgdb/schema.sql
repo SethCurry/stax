@@ -9,12 +9,16 @@ CREATE TABLE IF NOT EXISTS set_ (
     code TEXT NOT NULL
 );
 
-
-CREATE TABLE IF NOT EXISTS card_ (
+CREATE TABLE card_ (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     oracle_id TEXT NOT NULL,
-    rarity TEXT NOT NULL,
+    color_identity TEXT
+);
+
+CREATE TABLE IF NOT EXISTS card_face (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
     flavor_text TEXT NOT NULL,
     oracle_text TEXT NOT NULL,
     lang TEXT NOT NULL,
@@ -24,19 +28,19 @@ CREATE TABLE IF NOT EXISTS card_ (
     loyalty TEXT,
     mana_cost TEXT,
     type_line TEXT,
-    colors TEXT,
-    color_identity TEXT
+    colors TEXT
 );
 
 CREATE TABLE IF NOT EXISTS printing (
     id INTEGER PRIMARY KEY,
     artist_id INTEGER NOT NULL,
     set_id INTEGER NOT NULL,
-    card_id INTEGER NOT NULL,
+    card_face_id INTEGER NOT NULL,
+    rarity TEXT NOT NULL,
     name TEXT NOT NULL,
     FOREIGN KEY (artist_id) REFERENCES artist (id),
     FOREIGN KEY (set_id) REFERENCES set_ (id),
-    FOREIGN KEY (card_id) REFERENCES card_ (id)
+    FOREIGN KEY (card_face_id) REFERENCES card_face (id)
 );
 
 CREATE TABLE IF NOT EXISTS printing_image (
