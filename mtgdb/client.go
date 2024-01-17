@@ -72,3 +72,11 @@ func (c *Client) Sets() *SetClient {
 func (c *Client) Cards() *CardClient {
 	return newCardClient(c.baseClient)
 }
+
+func (c *Client) Rulings() *RulingClient {
+	return newRulingClient(c.baseClient)
+}
+
+func (c *Client) CardFaces() *CardFaceClient {
+	return newCardFaceClient(c.baseClient)
+}
