@@ -15,7 +15,8 @@ import (
 
 // ScryfallCmd is a command group for interacting with the Scryfall API.
 type ScryfallCmd struct {
-	Search ScryfallSearchCmd `cmd:"" help:"Search for cards"`
+	Search  ScryfallSearchCmd  `cmd:"" help:"Search for cards"`
+	Rulings ScryfallRulingsCmd `cmd:"" help:"Get rulings for a card"`
 }
 
 // ScryfallSearchCmd is the implementation of "stax scryfall search".
@@ -82,6 +83,36 @@ func (s *ScryfallSearchCmd) Run(ctx *Context) error {
 				return err
 			}
 		}
+	}
+
+	return nil
+}
+
+type ScryfallRulingsCmd struct {
+	Args []string `arg:"" help:"The name of the card"`
+}
+
+func (s *ScryfallRulingsCmd) Run(ctx *Context) error {
+	logger := ctx.Logger
+
+	client := scryfall.NewClient(nil)
+
+	cardName := strings.Join(s.Args, " ")
+
+	foundCard, err := client.Card.Named(context.Background(), cardName)
+	if err != nil {
+		return err
+	}
+
+	logger.Debug("found card", zap.String("name", foundCard.Name))
+
+	rulings, err := client.Rulings.ByScryfallID(context.Background(), foundCard.ID)
+	if err != nil {
+		return err
+	}
+
+	for _, ruling := range rulings {
+		fmt.Printf("%s (%s)\n%s\n\n", ruling.PublishedAt, ruling.Source, ruling.Comment)
 	}
 
 	return nil
