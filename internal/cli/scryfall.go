@@ -41,7 +41,7 @@ func (s *ScryfallSearchCmd) Run(ctx *Context) error {
 	var writeFunc func(*scryfall.Card) error
 
 	switch s.Format {
-	case "json":
+	case "json", "j":
 		os.Stdout.Write([]byte("[\n"))
 		writeFunc = func(card *scryfall.Card) error {
 			marshalled, err := json.MarshalIndent(card, "  ", "  ")
@@ -56,7 +56,7 @@ func (s *ScryfallSearchCmd) Run(ctx *Context) error {
 
 			return nil
 		}
-	case "table":
+	case "table", "t", "":
 		writer := console.NewScryfallCardTable(os.Stdout)
 		defer writer.Flush()
 
