@@ -2761,6 +2761,7 @@ type PrintingImageMutation struct {
 	typ             string
 	id              *int
 	url             *string
+	image_type      *printingimage.ImageType
 	clearedFields   map[string]struct{}
 	printing        *int
 	clearedprinting bool
@@ -2903,6 +2904,42 @@ func (m *PrintingImageMutation) ResetURL() {
 	m.url = nil
 }
 
+// SetImageType sets the "image_type" field.
+func (m *PrintingImageMutation) SetImageType(pt printingimage.ImageType) {
+	m.image_type = &pt
+}
+
+// ImageType returns the value of the "image_type" field in the mutation.
+func (m *PrintingImageMutation) ImageType() (r printingimage.ImageType, exists bool) {
+	v := m.image_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldImageType returns the old "image_type" field's value of the PrintingImage entity.
+// If the PrintingImage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintingImageMutation) OldImageType(ctx context.Context) (v printingimage.ImageType, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldImageType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldImageType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldImageType: %w", err)
+	}
+	return oldValue.ImageType, nil
+}
+
+// ResetImageType resets all changes to the "image_type" field.
+func (m *PrintingImageMutation) ResetImageType() {
+	m.image_type = nil
+}
+
 // SetPrintingID sets the "printing" edge to the Printing entity by id.
 func (m *PrintingImageMutation) SetPrintingID(id int) {
 	m.printing = &id
@@ -2976,9 +3013,12 @@ func (m *PrintingImageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PrintingImageMutation) Fields() []string {
-	fields := make([]string, 0, 1)
+	fields := make([]string, 0, 2)
 	if m.url != nil {
 		fields = append(fields, printingimage.FieldURL)
+	}
+	if m.image_type != nil {
+		fields = append(fields, printingimage.FieldImageType)
 	}
 	return fields
 }
@@ -2990,6 +3030,8 @@ func (m *PrintingImageMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case printingimage.FieldURL:
 		return m.URL()
+	case printingimage.FieldImageType:
+		return m.ImageType()
 	}
 	return nil, false
 }
@@ -3001,6 +3043,8 @@ func (m *PrintingImageMutation) OldField(ctx context.Context, name string) (ent.
 	switch name {
 	case printingimage.FieldURL:
 		return m.OldURL(ctx)
+	case printingimage.FieldImageType:
+		return m.OldImageType(ctx)
 	}
 	return nil, fmt.Errorf("unknown PrintingImage field %s", name)
 }
@@ -3016,6 +3060,13 @@ func (m *PrintingImageMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetURL(v)
+		return nil
+	case printingimage.FieldImageType:
+		v, ok := value.(printingimage.ImageType)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetImageType(v)
 		return nil
 	}
 	return fmt.Errorf("unknown PrintingImage field %s", name)
@@ -3068,6 +3119,9 @@ func (m *PrintingImageMutation) ResetField(name string) error {
 	switch name {
 	case printingimage.FieldURL:
 		m.ResetURL()
+		return nil
+	case printingimage.FieldImageType:
+		m.ResetImageType()
 		return nil
 	}
 	return fmt.Errorf("unknown PrintingImage field %s", name)

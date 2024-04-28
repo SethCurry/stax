@@ -123,6 +123,26 @@ func URLContainsFold(v string) predicate.PrintingImage {
 	return predicate.PrintingImage(sql.FieldContainsFold(FieldURL, v))
 }
 
+// ImageTypeEQ applies the EQ predicate on the "image_type" field.
+func ImageTypeEQ(v ImageType) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldEQ(FieldImageType, v))
+}
+
+// ImageTypeNEQ applies the NEQ predicate on the "image_type" field.
+func ImageTypeNEQ(v ImageType) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldNEQ(FieldImageType, v))
+}
+
+// ImageTypeIn applies the In predicate on the "image_type" field.
+func ImageTypeIn(vs ...ImageType) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldIn(FieldImageType, vs...))
+}
+
+// ImageTypeNotIn applies the NotIn predicate on the "image_type" field.
+func ImageTypeNotIn(vs ...ImageType) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldNotIn(FieldImageType, vs...))
+}
+
 // HasPrinting applies the HasEdge predicate on the "printing" edge.
 func HasPrinting() predicate.PrintingImage {
 	return predicate.PrintingImage(func(s *sql.Selector) {

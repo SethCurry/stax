@@ -42,6 +42,20 @@ func (piu *PrintingImageUpdate) SetNillableURL(s *string) *PrintingImageUpdate {
 	return piu
 }
 
+// SetImageType sets the "image_type" field.
+func (piu *PrintingImageUpdate) SetImageType(pt printingimage.ImageType) *PrintingImageUpdate {
+	piu.mutation.SetImageType(pt)
+	return piu
+}
+
+// SetNillableImageType sets the "image_type" field if the given value is not nil.
+func (piu *PrintingImageUpdate) SetNillableImageType(pt *printingimage.ImageType) *PrintingImageUpdate {
+	if pt != nil {
+		piu.SetImageType(*pt)
+	}
+	return piu
+}
+
 // SetPrintingID sets the "printing" edge to the Printing entity by ID.
 func (piu *PrintingImageUpdate) SetPrintingID(id int) *PrintingImageUpdate {
 	piu.mutation.SetPrintingID(id)
@@ -106,6 +120,11 @@ func (piu *PrintingImageUpdate) check() error {
 			return &ValidationError{Name: "url", err: fmt.Errorf(`oracledb: validator failed for field "PrintingImage.url": %w`, err)}
 		}
 	}
+	if v, ok := piu.mutation.ImageType(); ok {
+		if err := printingimage.ImageTypeValidator(v); err != nil {
+			return &ValidationError{Name: "image_type", err: fmt.Errorf(`oracledb: validator failed for field "PrintingImage.image_type": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -123,6 +142,9 @@ func (piu *PrintingImageUpdate) sqlSave(ctx context.Context) (n int, err error) 
 	}
 	if value, ok := piu.mutation.URL(); ok {
 		_spec.SetField(printingimage.FieldURL, field.TypeString, value)
+	}
+	if value, ok := piu.mutation.ImageType(); ok {
+		_spec.SetField(printingimage.FieldImageType, field.TypeEnum, value)
 	}
 	if piu.mutation.PrintingCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -183,6 +205,20 @@ func (piuo *PrintingImageUpdateOne) SetURL(s string) *PrintingImageUpdateOne {
 func (piuo *PrintingImageUpdateOne) SetNillableURL(s *string) *PrintingImageUpdateOne {
 	if s != nil {
 		piuo.SetURL(*s)
+	}
+	return piuo
+}
+
+// SetImageType sets the "image_type" field.
+func (piuo *PrintingImageUpdateOne) SetImageType(pt printingimage.ImageType) *PrintingImageUpdateOne {
+	piuo.mutation.SetImageType(pt)
+	return piuo
+}
+
+// SetNillableImageType sets the "image_type" field if the given value is not nil.
+func (piuo *PrintingImageUpdateOne) SetNillableImageType(pt *printingimage.ImageType) *PrintingImageUpdateOne {
+	if pt != nil {
+		piuo.SetImageType(*pt)
 	}
 	return piuo
 }
@@ -264,6 +300,11 @@ func (piuo *PrintingImageUpdateOne) check() error {
 			return &ValidationError{Name: "url", err: fmt.Errorf(`oracledb: validator failed for field "PrintingImage.url": %w`, err)}
 		}
 	}
+	if v, ok := piuo.mutation.ImageType(); ok {
+		if err := printingimage.ImageTypeValidator(v); err != nil {
+			return &ValidationError{Name: "image_type", err: fmt.Errorf(`oracledb: validator failed for field "PrintingImage.image_type": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -298,6 +339,9 @@ func (piuo *PrintingImageUpdateOne) sqlSave(ctx context.Context) (_node *Printin
 	}
 	if value, ok := piuo.mutation.URL(); ok {
 		_spec.SetField(printingimage.FieldURL, field.TypeString, value)
+	}
+	if value, ok := piuo.mutation.ImageType(); ok {
+		_spec.SetField(printingimage.FieldImageType, field.TypeEnum, value)
 	}
 	if piuo.mutation.PrintingCleared() {
 		edge := &sqlgraph.EdgeSpec{

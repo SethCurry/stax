@@ -26,6 +26,12 @@ func (pic *PrintingImageCreate) SetURL(s string) *PrintingImageCreate {
 	return pic
 }
 
+// SetImageType sets the "image_type" field.
+func (pic *PrintingImageCreate) SetImageType(pt printingimage.ImageType) *PrintingImageCreate {
+	pic.mutation.SetImageType(pt)
+	return pic
+}
+
 // SetPrintingID sets the "printing" edge to the Printing entity by ID.
 func (pic *PrintingImageCreate) SetPrintingID(id int) *PrintingImageCreate {
 	pic.mutation.SetPrintingID(id)
@@ -87,6 +93,14 @@ func (pic *PrintingImageCreate) check() error {
 			return &ValidationError{Name: "url", err: fmt.Errorf(`oracledb: validator failed for field "PrintingImage.url": %w`, err)}
 		}
 	}
+	if _, ok := pic.mutation.ImageType(); !ok {
+		return &ValidationError{Name: "image_type", err: errors.New(`oracledb: missing required field "PrintingImage.image_type"`)}
+	}
+	if v, ok := pic.mutation.ImageType(); ok {
+		if err := printingimage.ImageTypeValidator(v); err != nil {
+			return &ValidationError{Name: "image_type", err: fmt.Errorf(`oracledb: validator failed for field "PrintingImage.image_type": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -116,6 +130,10 @@ func (pic *PrintingImageCreate) createSpec() (*PrintingImage, *sqlgraph.CreateSp
 	if value, ok := pic.mutation.URL(); ok {
 		_spec.SetField(printingimage.FieldURL, field.TypeString, value)
 		_node.URL = value
+	}
+	if value, ok := pic.mutation.ImageType(); ok {
+		_spec.SetField(printingimage.FieldImageType, field.TypeEnum, value)
+		_node.ImageType = value
 	}
 	if nodes := pic.mutation.PrintingIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -3,6 +3,8 @@
 package printingimage
 
 import (
+	"fmt"
+
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 )
@@ -14,6 +16,8 @@ const (
 	FieldID = "id"
 	// FieldURL holds the string denoting the url field in the database.
 	FieldURL = "url"
+	// FieldImageType holds the string denoting the image_type field in the database.
+	FieldImageType = "image_type"
 	// EdgePrinting holds the string denoting the printing edge name in mutations.
 	EdgePrinting = "printing"
 	// Table holds the table name of the printingimage in the database.
@@ -31,6 +35,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldURL,
+	FieldImageType,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "printing_images"
@@ -59,6 +64,33 @@ var (
 	URLValidator func(string) error
 )
 
+// ImageType defines the type for the "image_type" enum field.
+type ImageType string
+
+// ImageType values.
+const (
+	ImageTypeSmall      ImageType = "small"
+	ImageTypeNormal     ImageType = "normal"
+	ImageTypeLarge      ImageType = "large"
+	ImageTypePng        ImageType = "png"
+	ImageTypeArtCrop    ImageType = "art_crop"
+	ImageTypeBorderCrop ImageType = "border_crop"
+)
+
+func (it ImageType) String() string {
+	return string(it)
+}
+
+// ImageTypeValidator is a validator for the "image_type" field enum values. It is called by the builders before save.
+func ImageTypeValidator(it ImageType) error {
+	switch it {
+	case ImageTypeSmall, ImageTypeNormal, ImageTypeLarge, ImageTypePng, ImageTypeArtCrop, ImageTypeBorderCrop:
+		return nil
+	default:
+		return fmt.Errorf("printingimage: invalid enum value for image_type field: %q", it)
+	}
+}
+
 // OrderOption defines the ordering options for the PrintingImage queries.
 type OrderOption func(*sql.Selector)
 
@@ -70,6 +102,11 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByURL orders the results by the url field.
 func ByURL(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldURL, opts...).ToFunc()
+}
+
+// ByImageType orders the results by the image_type field.
+func ByImageType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldImageType, opts...).ToFunc()
 }
 
 // ByPrintingField orders the results by printing field.

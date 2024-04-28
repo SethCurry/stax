@@ -19,6 +19,8 @@ type PrintingImage struct {
 	ID int `json:"id,omitempty"`
 	// URL holds the value of the "url" field.
 	URL string `json:"url,omitempty"`
+	// ImageType holds the value of the "image_type" field.
+	ImageType printingimage.ImageType `json:"image_type,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PrintingImageQuery when eager-loading is set.
 	Edges                   PrintingImageEdges `json:"edges"`
@@ -53,7 +55,7 @@ func (*PrintingImage) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case printingimage.FieldID:
 			values[i] = new(sql.NullInt64)
-		case printingimage.FieldURL:
+		case printingimage.FieldURL, printingimage.FieldImageType:
 			values[i] = new(sql.NullString)
 		case printingimage.ForeignKeys[0]: // printing_image_printing
 			values[i] = new(sql.NullInt64)
@@ -83,6 +85,12 @@ func (pi *PrintingImage) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field url", values[i])
 			} else if value.Valid {
 				pi.URL = value.String
+			}
+		case printingimage.FieldImageType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field image_type", values[i])
+			} else if value.Valid {
+				pi.ImageType = printingimage.ImageType(value.String)
 			}
 		case printingimage.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -134,6 +142,9 @@ func (pi *PrintingImage) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", pi.ID))
 	builder.WriteString("url=")
 	builder.WriteString(pi.URL)
+	builder.WriteString(", ")
+	builder.WriteString("image_type=")
+	builder.WriteString(fmt.Sprintf("%v", pi.ImageType))
 	builder.WriteByte(')')
 	return builder.String()
 }
