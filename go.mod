@@ -5,6 +5,8 @@ go 1.21.7
 require (
 	entgo.io/ent v0.13.1
 	github.com/alecthomas/kong v0.9.0
+	github.com/mattn/go-sqlite3 v1.14.16
+	github.com/mitchellh/go-homedir v1.1.0
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.27.0
 )

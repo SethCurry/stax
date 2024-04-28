@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+
 	"github.com/SethCurry/stax/internal/cli"
 	"github.com/alecthomas/kong"
 	"go.uber.org/zap"
@@ -41,7 +43,8 @@ func main() {
 	}
 
 	err = ctx.Run(&cli.Context{
-		Logger: logger,
+		Logger:  logger,
+		Context: context.Background(),
 	})
 
 	ctx.FatalIfErrorf(err)
