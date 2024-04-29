@@ -18,6 +18,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// ScryfallCards reads all of the cards from the provided scryfall.BulkReader and creates
+// all of the SQL records implied by that object (set, artists, etc).
 func ScryfallCards(ctx context.Context, logger *zap.Logger, db *oracledb.Client, reader *scryfall.BulkReader[scryfall.Card]) error {
 	for {
 		card, err := reader.Next()
@@ -35,7 +37,11 @@ func ScryfallCards(ctx context.Context, logger *zap.Logger, db *oracledb.Client,
 			break
 		}
 
-		err = scryfallCardIngestor(ctx, logger.With(zap.String("card_name", card.Name)), db, card)
+		err = scryfallCardIngestor(
+			ctx,
+			logger.With(zap.String("card_name", card.Name)),
+			db,
+			card)
 		if err != nil {
 			return err
 		}
@@ -43,8 +49,14 @@ func ScryfallCards(ctx context.Context, logger *zap.Logger, db *oracledb.Client,
 	return nil
 }
 
-func scryfallCardIngestor(ctx context.Context, logger *zap.Logger, db *oracledb.Client, row *scryfall.Card) error {
+func scryfallCardIngestor(
+	ctx context.Context,
+	logger *zap.Logger,
+	db *oracledb.Client,
+	row *scryfall.Card,
+) error {
 	if row.OracleID == "" {
+		logger.Debug("ignoring card because it is missing an oracle ID")
 		return nil
 	}
 
@@ -121,6 +133,8 @@ func createPrintingImagesIfNotExist(
 	return nil
 }
 
+// createSinglePrintingImage creates a single printing image in the database
+// if there is not an existing record with the same image type, URL, and printing.
 func createSinglePrintingImage(
 	ctx context.Context,
 	logger *zap.Logger,
@@ -334,6 +348,8 @@ func getOrCreateSet(
 	return newSet, nil
 }
 
+// getOrCreateCardArtist checks whether a card artist exists in the database and creates
+// it if not.
 func getOrCreateCardArtist(
 	ctx context.Context,
 	logger *zap.Logger,

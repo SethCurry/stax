@@ -10,6 +10,11 @@ tasks:
     cmds:
       - go generate ./oracledb
     dir: ./internal/oracle
+    sources:
+      - oracledb/schema/*.go
+    generates:
+      - oracledb/*.go
+      - oracledb/**/*.go
   lint:
     cmds:
       - golangci-lint run
@@ -21,3 +26,7 @@ tasks:
       - ent
     cmds:
       - go build ./cmd/stax
+    sources:
+      - cmd/**/*.go
+      - internal/**/*.go
+      - pkg/**/*.go
