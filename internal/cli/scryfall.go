@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -43,20 +42,12 @@ func (s *ScryfallSearchCmd) Run(ctx *Context) error {
 
 	switch s.Format {
 	case "json", "j":
+		logger.Debug("using JSON output")
+
 		os.Stdout.Write([]byte("[\n"))
-		writeFunc = func(card *scryfall.Card) error {
-			marshalled, err := json.MarshalIndent(card, "  ", "  ")
-			if err != nil {
-				return fmt.Errorf("failed to marshal card: %w", err)
-			}
+		defer os.Stdout.Write([]byte("]\n"))
 
-			os.Stdout.Write(marshalled)
-			os.Stdout.Write([]byte(",\n"))
-
-			defer os.Stdout.Write([]byte("]\n"))
-
-			return nil
-		}
+		writeFunc = console.ScryfallCardJSON
 	case "table", "t", "":
 		writer := console.NewScryfallCardTable(os.Stdout)
 		defer writer.Flush()
@@ -66,11 +57,15 @@ func (s *ScryfallSearchCmd) Run(ctx *Context) error {
 		}
 	}
 
+	pageNum := 0
+
 	for pager.HasMore() {
-		logger.Debug("retrieving a page of results")
+		pageNum++
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 		defer cancel()
+
+		logger.Debug("retrieving a page of results", zap.Int("page_number", pageNum))
 
 		cards, err := pager.Next(ctx)
 		if err != nil {

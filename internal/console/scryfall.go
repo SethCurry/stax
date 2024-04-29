@@ -1,8 +1,10 @@
 package console
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"text/tabwriter"
 
@@ -27,11 +29,15 @@ func (t *ScryfallCardTable) writeHeader() {
 }
 
 func (t *ScryfallCardTable) Write(card *scryfall.Card) error {
+	// double-sided or split cards have their name set to "name1 // name2"
 	nameSplit := strings.Split(card.Name, "//")
+
+	// ditto for types
 	typeSplit := strings.Split(card.TypeLine, "//")
 
 	name := nameSplit[0]
 	cardType := typeSplit[0]
+
 	newLineAfter := false
 
 	if len(nameSplit) > 1 {
@@ -74,4 +80,18 @@ func (t *ScryfallCardTable) Write(card *scryfall.Card) error {
 
 func (t *ScryfallCardTable) Flush() {
 	t.writer.Flush()
+}
+
+func ScryfallCardJSON(card *scryfall.Card) error {
+	marshalled, err := json.MarshalIndent(card, "  ", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal card: %w", err)
+	}
+
+	os.Stdout.Write(marshalled)
+	os.Stdout.Write([]byte(",\n"))
+
+	defer os.Stdout.Write([]byte("]\n"))
+
+	return nil
 }
