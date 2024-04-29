@@ -65,7 +65,7 @@ var (
 	// PrintingsColumns holds the columns for the "printings" table.
 	PrintingsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "rarity", Type: field.TypeEnum, Enums: []string{"common", "uncommon", "rare", "mythic"}},
+		{Name: "rarity", Type: field.TypeEnum, Enums: []string{"common", "uncommon", "rare", "mythic", "special"}},
 		{Name: "printing_artist", Type: field.TypeInt, Nullable: true},
 		{Name: "printing_set", Type: field.TypeInt, Nullable: true},
 		{Name: "printing_card_face", Type: field.TypeInt, Nullable: true},
@@ -142,7 +142,7 @@ var (
 	SetsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "name", Type: field.TypeString, Size: 255},
-		{Name: "code", Type: field.TypeString, Size: 3},
+		{Name: "code", Type: field.TypeString, Size: 255},
 	}
 	// SetsTable holds the schema information for the "sets" table.
 	SetsTable = &schema.Table{

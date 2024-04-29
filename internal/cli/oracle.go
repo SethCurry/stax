@@ -10,6 +10,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/mitchellh/go-homedir"
+	"go.uber.org/zap"
 
 	"github.com/SethCurry/stax/internal/oracle/etl"
 	"github.com/SethCurry/stax/internal/oracle/oracledb"
@@ -37,7 +38,7 @@ func connectToDatabase(ctx context.Context) (*oracledb.Client, error) {
 		return nil, fmt.Errorf("failed to get data directory: %w", err)
 	}
 
-	conn, err := oracledb.Open("sqlite3", filepath.Join(dataDir, "oracle.sqlite3"))
+	conn, err := oracledb.Open("sqlite3", filepath.Join(dataDir, "oracle.sqlite3?_fk=1&cache=shared"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
@@ -51,7 +52,30 @@ func connectToDatabase(ctx context.Context) (*oracledb.Client, error) {
 
 // OracleCmd is a command group for interacting with the Oracle database of MTG cards.
 type OracleCmd struct {
-	Load OracleLoadCmd `cmd:"" help:"Load cards from the Scryfall API."`
+	Load  OracleLoadCmd  `cmd:"" help:"Load cards from the Scryfall API."`
+	Reset OracleResetCmd `cmd:"" help:"Reset the Oracle database."`
+}
+
+type OracleResetCmd struct{}
+
+func (r *OracleResetCmd) Run(ctx *Context) error {
+	logger := ctx.Logger
+
+	dataDir, err := dataDirectory()
+	if err != nil {
+		return fmt.Errorf("failed to get data directory: %w", err)
+	}
+
+	dbPath := filepath.Join(dataDir, "oracle.sqlite3")
+
+	logger.Info("removing database file", zap.String("path", dbPath))
+
+	err = os.Remove(dbPath)
+	if err != nil {
+		return fmt.Errorf("failed to remove database file: %w", err)
+	}
+
+	return nil
 }
 
 type OracleLoadCmd struct {

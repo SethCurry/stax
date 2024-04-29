@@ -12,7 +12,7 @@ type Printing struct {
 
 func (Printing) Fields() []ent.Field {
 	return []ent.Field{
-		field.Enum("rarity").Values("common", "uncommon", "rare", "mythic"),
+		field.Enum("rarity").Values("common", "uncommon", "rare", "mythic", "special"),
 	}
 }
 

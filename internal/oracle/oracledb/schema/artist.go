@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	ArtistNameMinLen = 3
+	ArtistNameMinLen = 1
 	ArtistNameMaxLen = 255
 )
 

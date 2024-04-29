@@ -16,3 +16,8 @@ tasks:
   test:
     cmds:
       - go test -race -cover ./...
+  build:
+    deps:
+      - ent
+    cmds:
+      - go build ./cmd/stax

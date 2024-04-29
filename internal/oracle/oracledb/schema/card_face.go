@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	CardFaceNameMinLen = 3
+	CardFaceNameMinLen = 1
 	CardFaceNameMaxLen = 255
 )
 
