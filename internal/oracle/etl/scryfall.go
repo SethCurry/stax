@@ -85,7 +85,15 @@ func scryfallCardIngestor(ctx context.Context, logger *zap.Logger, db *oracledb.
 	return nil
 }
 
-func createPrintingImagesIfNotExist(ctx context.Context, logger *zap.Logger, db *oracledb.Client, row *scryfall.Card, cardPrinting *oracledb.Printing) error {
+// createPrintingImagesIfNotExist creates all printing images for a card if they do not already exist.
+// It will ignore any images that are not present in the row.
+func createPrintingImagesIfNotExist(
+	ctx context.Context,
+	logger *zap.Logger,
+	db *oracledb.Client,
+	row *scryfall.Card,
+	cardPrinting *oracledb.Printing,
+) error {
 	imageURIs := []struct {
 		uri   string
 		type_ printingimage.ImageType
@@ -113,10 +121,14 @@ func createPrintingImagesIfNotExist(ctx context.Context, logger *zap.Logger, db 
 	return nil
 }
 
-func createSinglePrintingImage(ctx context.Context, logger *zap.Logger, db *oracledb.Client, imageURL string, imageType printingimage.ImageType, cardPrinting *oracledb.Printing) error {
-	// TODO undesireable to log here, but easier to maintain currently.
-	// Needs to be un-done when createPrintingImagesIfNotExist switches
-	// to using a list and can change their own logger easily.
+func createSinglePrintingImage(
+	ctx context.Context,
+	logger *zap.Logger,
+	db *oracledb.Client,
+	imageURL string,
+	imageType printingimage.ImageType,
+	cardPrinting *oracledb.Printing,
+) error {
 	logger = logger.With(
 		zap.String("image_type", string(imageType)),
 		zap.String("image_url", imageURL))
@@ -204,13 +216,27 @@ func getOrCreatePrinting(
 	return newPrinting, nil
 }
 
-func getOrCreateCardFace(ctx context.Context, logger *zap.Logger, db *oracledb.Client, row *scryfall.Card, gotCard *oracledb.Card) (*oracledb.CardFace, error) {
-	existingCardFace, err := db.CardFace.Query().Where(cardface.NameEQ(row.Name), cardface.HasCardWith(card.IDEQ(gotCard.ID))).Only(ctx)
+func getOrCreateCardFace(
+	ctx context.Context,
+	logger *zap.Logger,
+	db *oracledb.Client,
+	row *scryfall.Card,
+	gotCard *oracledb.Card,
+) (*oracledb.CardFace, error) {
+	logger = logger.With(zap.String("card_face_name", row.Name))
+
+	existingCardFace, err := db.CardFace.Query().Where(
+		cardface.NameEQ(row.Name),
+		cardface.HasCardWith(card.IDEQ(gotCard.ID)),
+	).
+		Only(ctx)
 	if err == nil {
+		logger.Debug("card face already exists")
 		return existingCardFace, nil
 	}
 
 	if !oracledb.IsNotFound(err) {
+		logger.Error("failed to query for existing card face", zap.Error(err))
 		return nil, fmt.Errorf("failed to query for existing card face: %w", err)
 	}
 
@@ -229,13 +255,21 @@ func getOrCreateCardFace(ctx context.Context, logger *zap.Logger, db *oracledb.C
 		SetCard(gotCard).
 		Save(ctx)
 	if err != nil {
+		logger.Error("failed to create new card face", zap.Error(err))
 		return nil, fmt.Errorf("failed to create new card face: %w", err)
 	}
+
+	logger.Info("created new card face")
 
 	return newCardFace, nil
 }
 
-func getOrCreateCard(ctx context.Context, logger *zap.Logger, db *oracledb.Client, row *scryfall.Card) (*oracledb.Card, error) {
+func getOrCreateCard(
+	ctx context.Context,
+	logger *zap.Logger,
+	db *oracledb.Client,
+	row *scryfall.Card,
+) (*oracledb.Card, error) {
 	logger = logger.With(
 		zap.String("card_name", row.Name),
 		zap.String("oracle_id", row.OracleID),
@@ -269,7 +303,13 @@ func getOrCreateCard(ctx context.Context, logger *zap.Logger, db *oracledb.Clien
 	return newCard, nil
 }
 
-func getOrCreateSet(ctx context.Context, logger *zap.Logger, db *oracledb.Client, setName string, setCode string) (*oracledb.Set, error) {
+func getOrCreateSet(
+	ctx context.Context,
+	logger *zap.Logger,
+	db *oracledb.Client,
+	setName string,
+	setCode string,
+) (*oracledb.Set, error) {
 	logger = logger.With(zap.String("set_name", setName), zap.String("set_code", setCode))
 
 	existingSet, err := db.Set.Query().Where(set.NameEQ(setName)).Only(ctx)
@@ -294,7 +334,12 @@ func getOrCreateSet(ctx context.Context, logger *zap.Logger, db *oracledb.Client
 	return newSet, nil
 }
 
-func getOrCreateCardArtist(ctx context.Context, logger *zap.Logger, db *oracledb.Client, artistName string) (*oracledb.Artist, error) {
+func getOrCreateCardArtist(
+	ctx context.Context,
+	logger *zap.Logger,
+	db *oracledb.Client,
+	artistName string,
+) (*oracledb.Artist, error) {
 	logger = logger.With(zap.String("artist_name", artistName))
 
 	existingArtist, err := db.Artist.Query().Where(artist.NameEQ(artistName)).Only(ctx)
