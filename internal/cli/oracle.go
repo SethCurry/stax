@@ -127,6 +127,8 @@ func (r *OracleLoadCmd) Run(ctx *Context) error {
 
 	defer dbClient.Close()
 
+	fmt.Println("Starting ingest; this will take several minutes.")
+
 	err = etl.ScryfallCards(ctx.Context, logger, dbClient, reader)
 	if err != nil {
 		return fmt.Errorf("failed to load cards from Scryfall: %w", err)

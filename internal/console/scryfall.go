@@ -78,6 +78,8 @@ func (t *ScryfallCardTable) Write(card *scryfall.Card) error {
 	return nil
 }
 
+// Flush tells the ScryfallCardTable to write any buffered data
+// to disk.
 func (t *ScryfallCardTable) Flush() {
 	t.writer.Flush()
 }
