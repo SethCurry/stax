@@ -21,14 +21,14 @@ type ScryfallCmd struct {
 
 // ScryfallSearchCmd is the implementation of "stax scryfall search".
 type ScryfallSearchCmd struct {
-	Args   []string `arg:"" help:"The search query."`
+	Query  []string `arg:"" help:"The search query."`
 	Format string   `name:"format" short:"f" help:"The output format." enum:"table,json" default:"table"`
 }
 
 func (s *ScryfallSearchCmd) Run(ctx *Context) error {
 	logger := ctx.Logger
 
-	query := strings.Join(s.Args, " ")
+	query := strings.Join(s.Query, " ")
 
 	logger.Debug("searching for cards", zap.String("query", query))
 
@@ -89,7 +89,7 @@ func (s *ScryfallSearchCmd) Run(ctx *Context) error {
 }
 
 type ScryfallRulingsCmd struct {
-	Args []string `arg:"" help:"The name of the card"`
+	CardName []string `arg:"" help:"The name of the card"`
 }
 
 func (s *ScryfallRulingsCmd) Run(ctx *Context) error {
@@ -97,7 +97,7 @@ func (s *ScryfallRulingsCmd) Run(ctx *Context) error {
 
 	client := scryfall.NewClient(nil)
 
-	cardName := strings.Join(s.Args, " ")
+	cardName := strings.Join(s.CardName, " ")
 
 	foundCard, err := client.Card.Named(context.Background(), cardName)
 	if err != nil {

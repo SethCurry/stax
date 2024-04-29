@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -79,18 +78,14 @@ func (r *OracleResetCmd) Run(ctx *Context) error {
 }
 
 type OracleLoadCmd struct {
-	Args []string `arg:"" optional:"" help:"The path to the Scryfall bulk data file."`
-	HTTP bool     `name:"http" help:"Use the HTTP client instead of the default client."`
+	DataFile string `arg:"" optional:"" help:"The path to the Scryfall bulk data file."`
+	HTTP     bool   `name:"http" help:"Use the HTTP client instead of the default client."`
 }
 
 func (r *OracleLoadCmd) Run(ctx *Context) error {
 	logger := ctx.Logger
 
 	sfall := scryfall.NewClient(nil)
-
-	if len(r.Args) > 1 {
-		return errors.New("too many arguments")
-	}
 
 	var reader *scryfall.BulkReader[scryfall.Card]
 
@@ -112,11 +107,7 @@ func (r *OracleLoadCmd) Run(ctx *Context) error {
 			return fmt.Errorf("failed to create bulk reader: %w", err)
 		}
 	} else {
-		if len(r.Args) != 1 {
-			return errors.New("missing argument: path to Scryfall bulk data file")
-		}
-
-		fd, err := os.Open(r.Args[0])
+		fd, err := os.Open(r.DataFile)
 		if err != nil {
 			return fmt.Errorf("failed to open file: %w", err)
 		}
