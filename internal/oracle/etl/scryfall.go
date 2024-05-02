@@ -175,50 +175,59 @@ func createSinglePrintingImage(
 	return nil
 }
 
+// getOrCreatePrinting checks if a printing matching the provided parameters already exists.
+// If a matching printing is found, the matching printing is returned.  If no matching
+// printing could be found, one will be created and returned.
 func getOrCreatePrinting(
 	ctx context.Context,
-	logger *zap.Logger,
-	db *oracledb.Client,
-	rarity printing.Rarity,
-	gotArtist *oracledb.Artist,
-	gotSet *oracledb.Set,
-	gotCardFace *oracledb.CardFace,
+	logger *zap.Logger, // Zap logger for logging purposes
+	db *oracledb.Client, // OracleDB client to interact with the database
+	rarity printing.Rarity, // The rarity of the card face
+	gotArtist *oracledb.Artist, // Pointer to an artist entity (optional)
+	gotSet *oracledb.Set, // Set associated with the card face
+	gotCardFace *oracledb.CardFace, // The card face we are dealing with
 ) (*oracledb.Printing, error) {
+	// Logger is updated with additional contextual information about the printing
 	logger = logger.With(
 		zap.String("rarity", string(rarity)),
 		zap.String("set_name", gotSet.Name),
 		zap.String("card_face_name", gotCardFace.Name),
-		zap.Bool("has_artist", gotArtist != nil),
+		zap.Bool("has_artist", gotArtist != nil), // Checks if artist is present or not
 	)
-	var artistPred predicate.Printing
 
+	// Predicate for the artist based on whether it exists or not
+	var artistPred predicate.Printing
 	if gotArtist != nil {
 		artistPred = printing.HasArtistWith(artist.IDEQ(gotArtist.ID))
 	} else {
 		artistPred = printing.Not(printing.HasArtist())
 	}
 
+	// Query to find an existing printing with the given parameters
 	existingPrinting, err := db.Printing.Query().Where(
-		printing.RarityEQ(rarity),
-		artistPred,
-		printing.HasSetWith(set.IDEQ(gotSet.ID)),
+		printing.RarityEQ(rarity),                // Rarity of the card face
+		artistPred,                               // Artist predicate based on whether an artist is present or not
+		printing.HasSetWith(set.IDEQ(gotSet.ID)), // Set association of the printing
 		printing.HasCardFaceWith(cardface.IDEQ(gotCardFace.ID))).Only(ctx)
 	if err == nil {
+		// If existingPrinting is found, a debug log is made and existing printing is returned
 		logger.Debug("printing already exists")
 		return existingPrinting, nil
 	}
 
+	// Error handling if the printing does not exist in the database
 	if !oracledb.IsNotFound(err) {
 		logger.Error("failed to query for existing printing", zap.Error(err))
 		return nil, fmt.Errorf("failed to query for existing printing: %w", err)
 	}
 
+	// If no previous error occurred and the printing does not exist in the database, a new printing is created with given parameters
 	newPrintingQuery := db.Printing.Create().SetSet(gotSet).SetCardFace(gotCardFace).SetRarity(rarity)
-
-	if gotArtist != nil {
+	if gotArtist != nil { // If an artist is present, it is set in the new printing query
 		newPrintingQuery = newPrintingQuery.SetArtist(gotArtist)
 	}
 
+	// The newly created printing is saved into the database and returned along with any errors that might have occurred during saving
 	newPrinting, err := newPrintingQuery.Save(ctx)
 	if err != nil {
 		logger.Error("failed to create new printing", zap.Error(err))
@@ -227,7 +236,7 @@ func getOrCreatePrinting(
 
 	logger.Info("created new printing")
 
-	return newPrinting, nil
+	return newPrinting, nil // Return of the newly created printing and no error
 }
 
 func getOrCreateCardFace(
