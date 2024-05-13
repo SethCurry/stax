@@ -1,9 +1,10 @@
 <html>
 <head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
   <link href="https://cdn.jsdelivr.net/npm/mana-font@latest/css/mana.css" rel="stylesheet" type="text/css" /> 
   <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap" rel="stylesheet">
   <style>
     .section {
       background-color: #46494C;
@@ -31,6 +32,16 @@
       color: #232322;
       padding: 1em;
       margin: 1em;
+      border-radius: 1em;
+    }
+    .example {
+      background-color: #46494C;
+      color: #b9b6b3;
+      padding: 1em;
+      margin-left: 2em;
+      margin-right: 2em;
+      margin-top: 1em;
+      margin-bottom: 1em;
       border-radius: 1em;
     }
     body {
@@ -66,6 +77,23 @@
           {{ end }}
           {{end}}
 
+          {{ range $exampleIndex, $example := $rule.Examples }}
+          <div class="example">
+            <h6>Example</h6>
+            {{ range $contentIndex, $content := $example }}
+            {{ if eq $content.Type "text" }}
+              {{ $content.Value }}
+            {{ end }}
+            {{ if eq $content.Type "reference" }}
+              <a href="#rule-{{ElementID $content.Value}}">{{ $content.Value }}</a>
+            {{ end }}
+            {{ if eq $content.Type "symbol" }}
+              <i class="ms {{ ManaClass $content.Value }} ms-cost ms-shadow"></i>
+            {{ end }}
+            {{end}}
+          </div>
+          {{ end }}
+
           {{ range $subruleLetter, $subrule := $rule.Subrules }}
           <div class="subrule" id="rule-{{$subsectionNum}}_{{$ruleNum}}{{$subruleLetter}}">
             {{$subsectionNum}}.{{$ruleNum}}{{$subruleLetter}}: 
@@ -80,15 +108,31 @@
               <i class="ms {{ ManaClass $content.Value }} ms-cost ms-shadow"></i>
             {{ end }}
             {{ end }}
-          </div>
+            {{ range $exampleIndex, $example := $subrule.Examples }}
+            <div class="example">
+              <h6>Example</h6>
+              {{ range $contentIndex, $content := $example }}
+              {{ if eq $content.Type "text" }}
+                {{ $content.Value }}
+              {{ end }}
+              {{ if eq $content.Type "reference" }}
+                <a href="#rule-{{ElementID $content.Value}}">{{ $content.Value }}</a>
+              {{ end }}
+              {{ if eq $content.Type "symbol" }}
+                <i class="ms {{ ManaClass $content.Value }} ms-cost ms-shadow"></i>
+              {{ end }}
+              {{end}}
+            </div>
           {{ end }}
+          </div>
+          {{end}}
         </div>
-        {{ end }}
+        {{end}}
       </div>
+      {{ end }}
     </div>
     {{ end}}
   </div>
-  {{ end }}
   <div>
     <h2>Glossary</h1>
     <ul>
