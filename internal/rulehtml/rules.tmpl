@@ -14,8 +14,12 @@
 
 {{ define "example" }}
   <div class="example">
-    <h6>Example</h6>
-    {{ template "content" . }}
+    <span class="example-title">
+      Example
+    </span>
+    <div class="example-body">
+      {{ template "content" . }}
+    </div>
   </div>
 {{ end }}
 
@@ -30,40 +34,57 @@
     .section {
       background-color: #46494C;
       color: #b9b6b3;
-      padding: 1em;
-      margin: 1em;
+      padding: 0.5em;
+      margin: 0.5em;
       border-radius: 1em;
     }
     .subsection {
       background-color: #4C5C68;
       color: #b3a397;
-      padding: 1em;
-      margin: 1em;
+      padding: 0.5em;
+      margin: 0.5em;
       border-radius: 1em;
     }
     .rule {
       background-color: #C5C3C6;
       color: #3a3c39;
-      padding: 1em;
-      margin: 1em;
+      padding: 0.5em;
+      margin: 0.5em;
       border-radius: 1em;
     }
     .subrule {
       background-color: #DCDCDD;
       color: #232322;
       padding: 1em;
-      margin: 1em;
+      margin: 0.5em;
       border-radius: 1em;
     }
     .example {
-      background-color: #46494C;
-      color: #b9b6b3;
       margin-left: 2em;
       margin-right: 2em;
-      margin-top: 1em;
-      margin-bottom: 1em;
+      margin-top: 0.5em;
+      margin-bottom: 0.5em;
       border-radius: 1em;
-      padding: 1em;
+      display: flex;
+      flex-direction: column;
+    }
+    .example-title {
+      flex 1 1 auto;
+      background-color: #4C5C68;
+      color: #b3a397;
+      border-top-left-radius: 1em;
+      border-top-right-radius: 1em;
+      padding: 0.5em;
+      font-size: 1.4em;
+    }
+    .example-body {
+      flex 5 1 auto;
+      border-bottom-left-radius: 1em;
+      border-bottom-right-radius: 1em;
+      padding-bottom: 1em;
+      background-color: #46494C;
+      color: #b9b6b3;
+      padding: 0.5em;
     }
     body {
       padding: 1em;
