@@ -2,6 +2,7 @@ package ruleparser
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -150,7 +151,7 @@ func (r *parser) handleLine(line string, origLine string) error {
 		r.parseExample(line)
 
 		return nil
-	case strings.HasPrefix(origLine, "    "):
+	case strings.HasPrefix(origLine, "    ") || strings.HasPrefix(origLine, "\n"):
 		if r.lastExampler != nil {
 			r.lastExampler.AddToContents(line)
 		} else {
@@ -171,6 +172,8 @@ func (r *parser) execute() (*Rules, error) {
 
 		origLine := r.scanner.Text()
 		line := strings.TrimSpace(origLine)
+
+		origLine = strings.Trim(origLine, "\n")
 
 		if line == "" || line == "Credits" {
 			continue
@@ -196,8 +199,16 @@ func (r *parser) execute() (*Rules, error) {
 
 		err := r.handleLine(line, origLine)
 		if err != nil {
+			origLineJSON, jsonErr := json.Marshal(origLine)
+			if jsonErr != nil {
+				return nil, &ParseError{
+					Line:       origLine,
+					LineNumber: lineNumber,
+					Err:        err,
+				}
+			}
 			return nil, &ParseError{
-				Line:       origLine,
+				Line:       string(origLineJSON),
 				LineNumber: lineNumber,
 				Err:        err,
 			}

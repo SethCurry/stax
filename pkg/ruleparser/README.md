@@ -19,7 +19,7 @@ import (
   "fmt"
   "os"
 
-  "github.com/red-deck-wins/ruleparser"
+  "github.com/SethCurry/stax/pkg/ruleparser"
 )
 
 func main() {

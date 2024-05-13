@@ -1,0 +1,39 @@
+<html>
+<body>
+<div>
+<h1>Rules</h1>
+{{ range $sectionNum, $sectionRule := .Rules }}
+  <div>
+    <h2>{{ $sectionRule.Name }}</h2>
+    {{ range $subsectionNum, $subsectionRule := $sectionRule.Subsections }}
+    <div>
+      <h3>{{ $subsectionRule.Name }}</h3>
+      {{ range $ruleNum, $rule := $subsectionRule.Rules }}
+        <div>
+        {{ range $contentIndex, $content := $rule.Contents }}
+          {{ if $content.Type eq "text" }}
+            <p>{{ $content.Value }}</p>
+          {{ end }}
+          {{ if $content.Type eq "reference" }}
+            <p>{{ $content.Value }}</p>
+          {{ end }}
+          {{ if $content.Type eq "example" }}
+            <pre>{{ $content.Value }}</pre>
+          {{ end }}
+        {{ end }}
+        </div>
+      {{ end }}
+    </div>
+    {{ end}}
+  </div>
+{{ end }}
+</div>
+<div>
+<h1>Glossary</h1>
+<ul>
+{{ range $keyword, $definition := .Glossary }}
+<li>{{$keyword}}: {{$definition}}</li>
+{{ end }}
+</ul>
+</body>
+</html>

@@ -12,6 +12,9 @@ type Root struct {
 	// The scryfall command.
 	Scryfall ScryfallCmd `cmd:"" help:"Scryfall API commands"`
 
+	// The rules command
+	Rules RulesCmd `cmd:"" help:"Rules commands"`
+
 	// The log level to use.
 	// This needs to be unmarshaled into a zapcore.Level.
 	LogLevel string `name:"log-level" help:"The level to log at." default:"error" enum:"debug,info,warn,error"`
