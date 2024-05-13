@@ -10,8 +10,8 @@ import (
 	"github.com/SethCurry/stax/pkg/ruleparser"
 )
 
-//go:embed rules.html
-var ruleTemplate string
+//go:embed rules.tmpl
+var rootTemplate string
 
 func manaSymbolToClass(symbol string) (string, error) {
 	switch symbol {
@@ -29,7 +29,7 @@ func GenerateTemplate(parsedRules *ruleparser.Rules, toWriter io.Writer) error {
 	parsedTemplate, err := template.New("rules.tmpl").Funcs(template.FuncMap{
 		"ManaClass": manaSymbolToClass,
 		"ElementID": getElementID,
-	}).Parse(ruleTemplate)
+	}).Parse(rootTemplate)
 	if err != nil {
 		return fmt.Errorf("failed to parse template: %w", err)
 	}

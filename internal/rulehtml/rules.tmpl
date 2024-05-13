@@ -1,3 +1,24 @@
+{{ define "content" }}
+  {{ range $contentIndex, $content := . }}
+  {{ if eq $content.Type "text" }}
+    {{$content.Value }}
+  {{ end }}
+  {{ if eq $content.Type "reference" }}
+    <a href="#rule-{{ElementID $content.Value}}">{{ $content.Value }}</a>
+  {{ end }}
+  {{ if eq $content.Type "symbol" }}
+    <i class="ms {{ ManaClass $content.Value }} ms-cost ms-shadow"></i>
+  {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ define "example" }}
+  <div class="example">
+    <h6>Example</h6>
+    {{ template "content" . }}
+  </div>
+{{ end }}
+
 <html>
 <head>
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
@@ -65,65 +86,21 @@
         {{ range $ruleNum, $rule := $subsectionRule.Rules }}
         <div class="rule" id="rule-{{$subsectionNum}}_{{$ruleNum}}">
           {{$subsectionNum}}.{{$ruleNum}}:
-          {{ range $contentIndex, $content := $rule.Contents }}
-          {{ if eq $content.Type "text" }}
-            {{ $content.Value }}
-          {{ end }}
-          {{ if eq $content.Type "reference" }}
-            <a href="#rule-{{ElementID $content.Value}}">{{ $content.Value }}</a>
-          {{ end }}
-          {{ if eq $content.Type "symbol" }}
-            <i class="ms {{ ManaClass $content.Value }} ms-cost ms-shadow"></i>
-          {{ end }}
-          {{end}}
+          {{ template "content" $rule.Contents }}
 
           {{ range $exampleIndex, $example := $rule.Examples }}
-          <div class="example">
-            <h6>Example</h6>
-            {{ range $contentIndex, $content := $example }}
-            {{ if eq $content.Type "text" }}
-              {{ $content.Value }}
-            {{ end }}
-            {{ if eq $content.Type "reference" }}
-              <a href="#rule-{{ElementID $content.Value}}">{{ $content.Value }}</a>
-            {{ end }}
-            {{ if eq $content.Type "symbol" }}
-              <i class="ms {{ ManaClass $content.Value }} ms-cost ms-shadow"></i>
-            {{ end }}
-            {{end}}
-          </div>
+            {{ template "example" $example }}
           {{ end }}
 
           {{ range $subruleLetter, $subrule := $rule.Subrules }}
           <div class="subrule" id="rule-{{$subsectionNum}}_{{$ruleNum}}{{$subruleLetter}}">
             {{$subsectionNum}}.{{$ruleNum}}{{$subruleLetter}}: 
-            {{ range $contentIndex, $content := $subrule.Contents }}
-            {{ if eq $content.Type "text" }}
-              {{ $content.Value }}
-            {{ end }}
-            {{ if eq $content.Type "reference" }}
-              <a href="#rule-{{ElementID $content.Value}}">{{ $content.Value }}</a>
-            {{ end }}
-            {{ if eq $content.Type "symbol" }}
-              <i class="ms {{ ManaClass $content.Value }} ms-cost ms-shadow"></i>
-            {{ end }}
-            {{ end }}
+
+            {{ template "content" $subrule.Contents }}
+
             {{ range $exampleIndex, $example := $subrule.Examples }}
-            <div class="example">
-              <h6>Example</h6>
-              {{ range $contentIndex, $content := $example }}
-              {{ if eq $content.Type "text" }}
-                {{ $content.Value }}
-              {{ end }}
-              {{ if eq $content.Type "reference" }}
-                <a href="#rule-{{ElementID $content.Value}}">{{ $content.Value }}</a>
-              {{ end }}
-              {{ if eq $content.Type "symbol" }}
-                <i class="ms {{ ManaClass $content.Value }} ms-cost ms-shadow"></i>
-              {{ end }}
-              {{end}}
-            </div>
-          {{ end }}
+              {{ template "example" $example }}
+            {{ end }}
           </div>
           {{end}}
         </div>
