@@ -38,7 +38,7 @@ func (r *Rule) AddToContents(text string) {
 func isRule(line string) bool {
 	re := regexp.MustCompile(`^[0-9]{3}\.[0-9]+\.? .*`)
 
-	return re.MatchString(line)
+	return re.MatchString(line) || strings.HasPrefix(line, "901.4.All")
 }
 
 // ErrInvalidRuleLine means that the line could not be parsed as a rule.
@@ -55,6 +55,10 @@ func parseRuleLine(line string) (int, *Rule, error) {
 
 	if len(parts) < 2 {
 		return 0, nil, ErrInvalidRuleLine
+	}
+
+	if parts[0] == "901.4.All" {
+		return 4, NewRule(parseContent(line[6:])), nil
 	}
 
 	ruleNumberWithDot := strings.TrimSuffix(parts[0], ".")
