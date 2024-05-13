@@ -45,7 +45,7 @@ func parseContent(content string) []*ContentElement {
 			if len(acc) > 0 {
 				elements = append(elements, &ContentElement{
 					Type:  ContentText,
-					Value: acc,
+					Value: convertEncoding(acc),
 				})
 				acc = ""
 			}
@@ -62,11 +62,13 @@ func parseContent(content string) []*ContentElement {
 			maybeRef := string(character) + scanner.ReadUntil([]rune{' ', ')'})
 			maybeRef = strings.TrimSuffix(maybeRef, ".")
 
-			if refRegex.MatchString(maybeRef) {
+			lastElEndsInSeeRule := strings.HasSuffix(acc, "ee rule ")
+
+			if refRegex.MatchString(maybeRef) || lastElEndsInSeeRule {
 				if len(acc) > 0 {
 					elements = append(elements, &ContentElement{
 						Type:  ContentText,
-						Value: acc,
+						Value: convertEncoding(acc),
 					})
 					acc = ""
 				}
@@ -86,9 +88,17 @@ func parseContent(content string) []*ContentElement {
 	if len(acc) > 0 {
 		elements = append(elements, &ContentElement{
 			Type:  ContentText,
-			Value: acc,
+			Value: convertEncoding(acc),
 		})
 	}
 
 	return elements
+}
+
+func convertEncoding(old string) string {
+	old = strings.Replace(old, "â¢", "™", -1)
+	old = strings.Replace(old, "â", "-", -1)
+	old = strings.Replace(old, "â", "'", -1)
+
+	return old
 }

@@ -43,6 +43,9 @@ func main() {
 	err = ctx.Run(&cli.Context{
 		Logger: logger,
 	})
+	if err != nil {
+		logger.Fatal("failed to execute command", zap.Error(err))
+	}
 
-	ctx.FatalIfErrorf(err)
+	logger.Sync()
 }
