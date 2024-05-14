@@ -3,13 +3,14 @@ package squid
 import (
 	"net/http"
 
+	"github.com/SethCurry/stax/internal/oracle/oracledb"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
 
 type HandlerFunc func(*Context) error
 
-func NewServer(handlerLogger *zap.Logger) *Server {
+func NewServer(oraDB *oracledb.Client, handlerLogger *zap.Logger) *Server {
 	return &Server{
 		handlerLogger: handlerLogger,
 		router:        chi.NewRouter(),
@@ -19,10 +20,11 @@ func NewServer(handlerLogger *zap.Logger) *Server {
 type Server struct {
 	handlerLogger *zap.Logger
 	router        chi.Router
+	db            *oracledb.Client
 }
 
 func (s *Server) getContext(req *http.Request, resp http.ResponseWriter) *Context {
-	return NewContext(req, resp, s.handlerLogger)
+	return NewContext(req, resp, s.db, s.handlerLogger)
 }
 
 func (s *Server) wrapHandler(handler HandlerFunc) http.HandlerFunc {
