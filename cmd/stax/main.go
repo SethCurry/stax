@@ -26,8 +26,8 @@ func main() {
 		Level:            zap.NewAtomicLevelAt(logLevel),
 		Encoding:         "console",
 		Development:      true,
-		OutputPaths:      []string{"stderr"},
-		ErrorOutputPaths: []string{"stderr"},
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stdout"},
 		EncoderConfig: zapcore.EncoderConfig{
 			MessageKey:  "msg",
 			LevelKey:    "lvl",

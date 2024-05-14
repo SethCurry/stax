@@ -39,14 +39,5 @@ func (cmd *RulesHTMLCmd) Run(ctx *Context) error {
 		logger.Fatal("failed to generate templated HTML", zap.Error(err))
 	}
 
-	/*
-		for _, section := range parsedRules.Sections {
-			fmt.Println(section.Name)
-			for _, subsection := range section.Subsections {
-				fmt.Println("\t" + subsection.Name)
-			}
-		}
-	*/
-
 	return nil
 }

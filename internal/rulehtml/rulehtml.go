@@ -15,7 +15,7 @@ var rootTemplate string
 
 func manaSymbolToClass(symbol string) (string, error) {
 	switch symbol {
-	case "t":
+	case "t", "T":
 		return "ms-tap", nil
 	}
 	return "ms-" + strings.Replace(strings.ToLower(symbol), "/", "", -1), nil
