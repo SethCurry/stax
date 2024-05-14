@@ -170,7 +170,7 @@ func (r *parser) execute() (*Rules, error) {
 	for r.scanner.Scan() {
 		lineNumber++
 
-		origLine := r.scanner.Text()
+		origLine := convertEncoding(r.scanner.Text())
 		line := strings.TrimSpace(origLine)
 
 		origLine = strings.Trim(origLine, "\n")
