@@ -1,9 +1,14 @@
 package cli
 
-import "go.uber.org/zap"
+import (
+	"context"
+
+	"go.uber.org/zap"
+)
 
 type Context struct {
-	Logger *zap.Logger
+	Logger  *zap.Logger
+	Context context.Context
 }
 
 // Root is the main entrypoint for the CLI.
@@ -11,6 +16,8 @@ type Context struct {
 type Root struct {
 	// The scryfall command.
 	Scryfall ScryfallCmd `cmd:"" help:"Scryfall API commands"`
+
+	Oracle OracleCmd `cmd:"" help:"Oracle database commands"`
 
 	// The log level to use.
 	// This needs to be unmarshaled into a zapcore.Level.
