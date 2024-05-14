@@ -10,15 +10,15 @@ import (
 )
 
 type RulesCmd struct {
-	Judge RulesJudgeCmd `cmd:"" help:"Generate SQL for updating the Judge rules website."`
+	HTML RulesHTMLCmd `cmd:"" help:"Generate stand-alone HTML documentation of the rules."`
 }
 
-type RulesJudgeCmd struct {
+type RulesHTMLCmd struct {
 	RulesFile string `arg:"rules-file" help:"The .txt rules file to parse rules from."`
 	Output    string `type:"path" optional:"output" default:"rules.html" help:"The file to write the output to."`
 }
 
-func (cmd *RulesJudgeCmd) Run(ctx *Context) error {
+func (cmd *RulesHTMLCmd) Run(ctx *Context) error {
 	logger := ctx.Logger
 
 	logger.Info("parsing rules", zap.String("rules_file", cmd.RulesFile))

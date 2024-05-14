@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/SethCurry/stax/internal/cli"
 	"github.com/alecthomas/kong"
 	"go.uber.org/zap"
@@ -39,6 +41,12 @@ func main() {
 	if err != nil {
 		ctx.FatalIfErrorf(err)
 	}
+	defer func() {
+		err := logger.Sync()
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+	}()
 
 	err = ctx.Run(&cli.Context{
 		Logger: logger,
@@ -46,6 +54,4 @@ func main() {
 	if err != nil {
 		logger.Fatal("failed to execute command", zap.Error(err))
 	}
-
-	logger.Sync()
 }
