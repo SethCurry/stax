@@ -1,8 +1,9 @@
 package cli
 
 import (
+	"context"
+
 	"github.com/SethCurry/stax/internal/api/squid"
-	"github.com/SethCurry/stax/internal/oracle/oracledb"
 	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
 )
@@ -10,7 +11,7 @@ import (
 type ApiCmd struct{}
 
 func (a *ApiCmd) Run(ctx *Context) error {
-	dbConn, err := oracledb.Open("sqlite3", "file://.local/api.sqlite3")
+	dbConn, err := connectToDatabase(context.Background())
 	if err != nil {
 		ctx.Logger.Fatal("failed to open connection to DB", zap.Error(err))
 	}

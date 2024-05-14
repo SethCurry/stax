@@ -36,7 +36,7 @@ func (r *ResponseContext) WriteJSON(status int, data interface{}) error {
 	return err
 }
 
-func NewContext(req *http.Request, resp http.ResponseWriter, oraDB *oracledb.Client, logger *zap.Logger) *Context {
+func NewContext(req *http.Request, resp http.ResponseWriter, oraDB *oracledb.Tx, logger *zap.Logger) *Context {
 	return &Context{
 		Request: &RequestContext{
 			req: req,
@@ -53,5 +53,5 @@ type Context struct {
 	Request  *RequestContext
 	Response *ResponseContext
 	Logger   *zap.Logger
-	DB       *oracledb.Client
+	DB       *oracledb.Tx
 }
