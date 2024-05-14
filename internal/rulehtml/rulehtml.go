@@ -13,6 +13,9 @@ import (
 //go:embed rules.tmpl
 var rootTemplate string
 
+//go:embed mana.css
+var manaCss string
+
 func manaSymbolToClass(symbol string) (string, error) {
 	switch symbol {
 	case "t":
