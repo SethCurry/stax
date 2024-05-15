@@ -95,6 +95,7 @@ const (
 	RarityRare     Rarity = "rare"
 	RarityMythic   Rarity = "mythic"
 	RaritySpecial  Rarity = "special"
+	RarityBonus    Rarity = "bonus"
 )
 
 func (r Rarity) String() string {
@@ -104,7 +105,7 @@ func (r Rarity) String() string {
 // RarityValidator is a validator for the "rarity" field enum values. It is called by the builders before save.
 func RarityValidator(r Rarity) error {
 	switch r {
-	case RarityCommon, RarityUncommon, RarityRare, RarityMythic, RaritySpecial:
+	case RarityCommon, RarityUncommon, RarityRare, RarityMythic, RaritySpecial, RarityBonus:
 		return nil
 	default:
 		return fmt.Errorf("printing: invalid enum value for rarity field: %q", r)

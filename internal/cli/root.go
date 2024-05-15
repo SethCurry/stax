@@ -19,6 +19,8 @@ type Root struct {
 
 	Oracle OracleCmd `cmd:"" help:"Oracle database commands"`
 
+	API APICmd `cmd:"" help:"Start the API server."`
+
 	// The log level to use.
 	// This needs to be unmarshaled into a zapcore.Level.
 	LogLevel string `name:"log-level" help:"The level to log at." default:"error" enum:"debug,info,warn,error"`

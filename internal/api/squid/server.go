@@ -1,6 +1,7 @@
 package squid
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -10,6 +11,14 @@ import (
 )
 
 type HandlerFunc func(*Context) error
+
+func NewErrorResponse(err error) *ErrorResponse {
+	return &ErrorResponse{Err: err.Error()}
+}
+
+type ErrorResponse struct {
+	Err string `json:"error"`
+}
 
 func NewServer(oraDB *oracledb.Client, handlerLogger *zap.Logger) *Server {
 	return &Server{
@@ -35,11 +44,27 @@ func (s *Server) getContext(req *http.Request, resp http.ResponseWriter) (*Conte
 
 func (s *Server) wrapHandler(handler HandlerFunc) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
-		ctx, err := s.getContext(req, resp)
+		var err error
+		var ctx *Context
+
+		defer func() {
+			if err != nil {
+				errResponse := NewErrorResponse(err)
+
+				marshalled, _ := json.Marshal(errResponse)
+
+				resp.WriteHeader(500)
+				resp.Write(marshalled)
+			}
+		}()
+
+		ctx, err = s.getContext(req, resp)
 		if err != nil {
 			ctx.Logger.Error("failed to get transaction", zap.Error(err))
 			return
 		}
+
+		defer ctx.DB.Commit()
 
 		err = handler(ctx)
 		if err != nil {

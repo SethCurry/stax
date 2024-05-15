@@ -3,20 +3,23 @@ package cli
 import (
 	"context"
 
+	"github.com/SethCurry/stax/internal/api/endpoints"
 	"github.com/SethCurry/stax/internal/api/squid"
 	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
 )
 
-type ApiCmd struct{}
+type APICmd struct{}
 
-func (a *ApiCmd) Run(ctx *Context) error {
+func (a *APICmd) Run(ctx *Context) error {
 	dbConn, err := connectToDatabase(context.Background())
 	if err != nil {
 		ctx.Logger.Fatal("failed to open connection to DB", zap.Error(err))
 	}
 
 	srv := squid.NewServer(dbConn, ctx.Logger)
+
+	srv.Get("/cards/named", endpoints.CardByName)
 
 	err = srv.Serve(":8765")
 	if err != nil {

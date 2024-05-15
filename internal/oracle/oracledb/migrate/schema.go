@@ -65,7 +65,7 @@ var (
 	// PrintingsColumns holds the columns for the "printings" table.
 	PrintingsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "rarity", Type: field.TypeEnum, Enums: []string{"common", "uncommon", "rare", "mythic", "special"}},
+		{Name: "rarity", Type: field.TypeEnum, Enums: []string{"common", "uncommon", "rare", "mythic", "special", "bonus"}},
 		{Name: "printing_artist", Type: field.TypeInt, Nullable: true},
 		{Name: "printing_set", Type: field.TypeInt, Nullable: true},
 		{Name: "printing_card_face", Type: field.TypeInt, Nullable: true},

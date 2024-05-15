@@ -1,15 +1,25 @@
 package squid
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+
+	"github.com/gorilla/schema"
 
 	"github.com/SethCurry/stax/internal/oracle/oracledb"
 	"go.uber.org/zap"
 )
 
+var formDecoder = schema.NewDecoder()
+
 type RequestContext struct {
 	req *http.Request
+}
+
+func (r *RequestContext) Context() context.Context {
+	return r.req.Context()
 }
 
 func (r *RequestContext) UnmarshalJSON(into interface{}) error {
@@ -18,6 +28,20 @@ func (r *RequestContext) UnmarshalJSON(into interface{}) error {
 	decoder := json.NewDecoder(r.req.Body)
 
 	return decoder.Decode(into)
+}
+
+func (r *RequestContext) UnmarshalForm(into interface{}) error {
+	err := r.req.ParseForm()
+	if err != nil {
+		return fmt.Errorf("failed to parse form: %w", err)
+	}
+
+	err = formDecoder.Decode(into, r.req.PostForm)
+	if err != nil {
+		return fmt.Errorf("failed to decode form data: %w", err)
+	}
+
+	return nil
 }
 
 type ResponseContext struct {
