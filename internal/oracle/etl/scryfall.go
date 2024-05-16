@@ -30,6 +30,13 @@ func ScryfallCards(ctx context.Context, logger *zap.Logger, db *oracledb.Client,
 	setCache := make(map[string]int)
 	cardCache := make(map[string]int)
 
+	numCards, err := txn.Card.Query().Count(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to query for current card count: %w", err)
+	}
+
+	isFresh := numCards == 0
+
 	for {
 		card, err := reader.Next()
 		if err != nil {
@@ -57,7 +64,8 @@ func ScryfallCards(ctx context.Context, logger *zap.Logger, db *oracledb.Client,
 			card,
 			artistCache,
 			setCache,
-			cardCache)
+			cardCache,
+			isFresh)
 		if err != nil {
 			return err
 		}
@@ -73,6 +81,7 @@ func scryfallCardIngestor(
 	artistCache map[string]int,
 	setCache map[string]int,
 	cardCache map[string]int,
+	isFresh bool,
 ) error {
 	if row.OracleID == "" {
 		logger.Debug("ignoring card because it is missing an oracle ID")
@@ -84,7 +93,7 @@ func scryfallCardIngestor(
 	if gotCardID, ok := cardCache[row.ID]; ok {
 		cardID = gotCardID
 	} else {
-		gotCard, err := getOrCreateCard(ctx, logger, db, row)
+		gotCard, err := getOrCreateCard(ctx, logger, db, row, isFresh)
 		if err != nil {
 			return fmt.Errorf("failed to get or create card: %w", err)
 		}
@@ -99,7 +108,7 @@ func scryfallCardIngestor(
 		if foundArtistID, ok := artistCache[row.Artist]; ok {
 			artistID = foundArtistID
 		} else {
-			cardArtist, err := getOrCreateCardArtist(ctx, logger, db, row.Artist)
+			cardArtist, err := getOrCreateCardArtist(ctx, logger, db, row.Artist, isFresh)
 			if err != nil {
 				return fmt.Errorf("failed to get or create card artist: %w", err)
 			}
@@ -113,7 +122,7 @@ func scryfallCardIngestor(
 	if gotSetID, ok := setCache[row.SetCode]; ok {
 		setID = gotSetID
 	} else {
-		cardSet, err := getOrCreateSet(ctx, logger, db, row.SetName, row.SetCode)
+		cardSet, err := getOrCreateSet(ctx, logger, db, row.SetName, row.SetCode, isFresh)
 		if err != nil {
 			return fmt.Errorf("failed to get or create card set: %w", err)
 		}
@@ -122,17 +131,17 @@ func scryfallCardIngestor(
 		setID = cardSet.ID
 	}
 
-	cardFace, err := getOrCreateCardFace(ctx, logger, db, row, cardID)
+	cardFace, err := getOrCreateCardFace(ctx, logger, db, row, cardID, isFresh)
 	if err != nil {
 		return fmt.Errorf("failed to get or create card face: %w", err)
 	}
 
-	cardPrinting, err := getOrCreatePrinting(ctx, logger, db, printing.Rarity(row.Rarity), artistID, setID, cardFace)
+	cardPrinting, err := getOrCreatePrinting(ctx, logger, db, printing.Rarity(row.Rarity), artistID, setID, cardFace, isFresh)
 	if err != nil {
 		return fmt.Errorf("failed to get or create card printing: %w", err)
 	}
 
-	err = createPrintingImagesIfNotExist(ctx, logger, db, row, cardPrinting)
+	err = createPrintingImagesIfNotExist(ctx, logger, db, row, cardPrinting, isFresh)
 	if err != nil {
 		return fmt.Errorf("failed to create printing images: %w", err)
 	}
@@ -148,6 +157,7 @@ func createPrintingImagesIfNotExist(
 	db *oracledb.Tx,
 	row *scryfall.Card,
 	cardPrinting *oracledb.Printing,
+	isFresh bool,
 ) error {
 	imageURIs := []struct {
 		uri   string
@@ -169,7 +179,8 @@ func createPrintingImagesIfNotExist(
 				db,
 				imageURI.uri,
 				imageURI.type_,
-				cardPrinting)
+				cardPrinting,
+				isFresh)
 		}
 	}
 
@@ -185,28 +196,31 @@ func createSinglePrintingImage(
 	imageURL string,
 	imageType printingimage.ImageType,
 	cardPrinting *oracledb.Printing,
+	isFresh bool,
 ) error {
 	logger = logger.With(
 		zap.String("image_type", string(imageType)),
 		zap.String("image_url", imageURL))
 
-	_, err := db.PrintingImage.Query().
-		Where(
-			printingimage.ImageTypeEQ(imageType),
-			printingimage.URLEQ(imageURL),
-			printingimage.HasPrintingWith(printing.IDEQ(cardPrinting.ID))).
-		Only(ctx)
-	if err == nil {
-		logger.Debug("printing image already exists")
-		return nil
+	if !isFresh {
+		_, err := db.PrintingImage.Query().
+			Where(
+				printingimage.ImageTypeEQ(imageType),
+				printingimage.URLEQ(imageURL),
+				printingimage.HasPrintingWith(printing.IDEQ(cardPrinting.ID))).
+			Only(ctx)
+		if err == nil {
+			logger.Debug("printing image already exists")
+			return nil
+		}
+
+		if !oracledb.IsNotFound(err) {
+			logger.Error("failed to query for existing printing image", zap.Error(err))
+			return fmt.Errorf("failed to query for existing printing image: %w", err)
+		}
 	}
 
-	if !oracledb.IsNotFound(err) {
-		logger.Error("failed to query for existing printing image", zap.Error(err))
-		return fmt.Errorf("failed to query for existing printing image: %w", err)
-	}
-
-	_, err = db.PrintingImage.Create().
+	_, err := db.PrintingImage.Create().
 		SetURL(imageURL).
 		SetImageType(imageType).
 		SetPrinting(cardPrinting).
@@ -229,6 +243,7 @@ func getOrCreatePrinting(
 	gotArtistID int, // Pointer to an artist entity (optional)
 	gotSetID int, // Set associated with the card face
 	gotCardFace *oracledb.CardFace, // The card face we are dealing with
+	isFresh bool,
 ) (*oracledb.Printing, error) {
 	// Logger is updated with additional contextual information about the printing
 	logger = logger.With(
@@ -246,22 +261,24 @@ func getOrCreatePrinting(
 		artistPred = printing.Not(printing.HasArtist())
 	}
 
-	// Query to find an existing printing with the given parameters
-	existingPrinting, err := db.Printing.Query().Where(
-		printing.RarityEQ(rarity),               // Rarity of the card face
-		artistPred,                              // Artist predicate based on whether an artist is present or not
-		printing.HasSetWith(set.IDEQ(gotSetID)), // Set association of the printing
-		printing.HasCardFaceWith(cardface.IDEQ(gotCardFace.ID))).Only(ctx)
-	if err == nil {
-		// If existingPrinting is found, a debug log is made and existing printing is returned
-		logger.Debug("printing already exists")
-		return existingPrinting, nil
-	}
+	if !isFresh {
+		// Query to find an existing printing with the given parameters
+		existingPrinting, err := db.Printing.Query().Where(
+			printing.RarityEQ(rarity),               // Rarity of the card face
+			artistPred,                              // Artist predicate based on whether an artist is present or not
+			printing.HasSetWith(set.IDEQ(gotSetID)), // Set association of the printing
+			printing.HasCardFaceWith(cardface.IDEQ(gotCardFace.ID))).Only(ctx)
+		if err == nil {
+			// If existingPrinting is found, a debug log is made and existing printing is returned
+			logger.Debug("printing already exists")
+			return existingPrinting, nil
+		}
 
-	// Error handling if the printing does not exist in the database
-	if !oracledb.IsNotFound(err) {
-		logger.Error("failed to query for existing printing", zap.Error(err))
-		return nil, fmt.Errorf("failed to query for existing printing: %w", err)
+		// Error handling if the printing does not exist in the database
+		if !oracledb.IsNotFound(err) {
+			logger.Error("failed to query for existing printing", zap.Error(err))
+			return nil, fmt.Errorf("failed to query for existing printing: %w", err)
+		}
 	}
 
 	// If no previous error occurred and the printing does not exist in the database, a new printing is created with given parameters
@@ -288,22 +305,25 @@ func getOrCreateCardFace(
 	db *oracledb.Tx,
 	row *scryfall.Card,
 	gotCardID int,
+	isFresh bool,
 ) (*oracledb.CardFace, error) {
 	logger = logger.With(zap.String("card_face_name", row.Name))
 
-	existingCardFace, err := db.CardFace.Query().Where(
-		cardface.NameEQ(row.Name),
-		cardface.HasCardWith(card.IDEQ(gotCardID)),
-	).
-		Only(ctx)
-	if err == nil {
-		logger.Debug("card face already exists")
-		return existingCardFace, nil
-	}
+	if !isFresh {
+		existingCardFace, err := db.CardFace.Query().Where(
+			cardface.NameEQ(row.Name),
+			cardface.HasCardWith(card.IDEQ(gotCardID)),
+		).
+			Only(ctx)
+		if err == nil {
+			logger.Debug("card face already exists")
+			return existingCardFace, nil
+		}
 
-	if !oracledb.IsNotFound(err) {
-		logger.Error("failed to query for existing card face", zap.Error(err))
-		return nil, fmt.Errorf("failed to query for existing card face: %w", err)
+		if !oracledb.IsNotFound(err) {
+			logger.Error("failed to query for existing card face", zap.Error(err))
+			return nil, fmt.Errorf("failed to query for existing card face: %w", err)
+		}
 	}
 
 	newCardFace, err := db.CardFace.Create().
@@ -335,6 +355,7 @@ func getOrCreateCard(
 	logger *zap.Logger,
 	db *oracledb.Tx,
 	row *scryfall.Card,
+	isFresh bool,
 ) (*oracledb.Card, error) {
 	logger = logger.With(
 		zap.String("card_name", row.Name),
@@ -342,15 +363,17 @@ func getOrCreateCard(
 		zap.Strings("colors", row.Colors),
 	)
 
-	existingCard, err := db.Card.Query().Where(card.NameEQ(row.Name)).Only(ctx)
-	if err == nil {
-		logger.Debug("card already exists")
-		return existingCard, nil
-	}
+	if !isFresh {
+		existingCard, err := db.Card.Query().Where(card.NameEQ(row.Name)).Only(ctx)
+		if err == nil {
+			logger.Debug("card already exists")
+			return existingCard, nil
+		}
 
-	if !oracledb.IsNotFound(err) {
-		logger.Error("failed to query for existing card", zap.Error(err))
-		return nil, fmt.Errorf("failed to query for existing card: %w", err)
+		if !oracledb.IsNotFound(err) {
+			logger.Error("failed to query for existing card", zap.Error(err))
+			return nil, fmt.Errorf("failed to query for existing card: %w", err)
+		}
 	}
 
 	// TODO write function to convert row.Colors to a bitfield
@@ -375,18 +398,21 @@ func getOrCreateSet(
 	db *oracledb.Tx,
 	setName string,
 	setCode string,
+	isFresh bool,
 ) (*oracledb.Set, error) {
 	logger = logger.With(zap.String("set_name", setName), zap.String("set_code", setCode))
 
-	existingSet, err := db.Set.Query().Where(set.NameEQ(setName)).Only(ctx)
-	if err == nil {
-		logger.Debug("card already exists")
-		return existingSet, nil
-	}
+	if !isFresh {
+		existingSet, err := db.Set.Query().Where(set.NameEQ(setName)).Only(ctx)
+		if err == nil {
+			logger.Debug("card already exists")
+			return existingSet, nil
+		}
 
-	if !oracledb.IsNotFound(err) {
-		logger.Error("failed to query for existing set", zap.Error(err))
-		return nil, fmt.Errorf("failed to query for existing set: %w", err)
+		if !oracledb.IsNotFound(err) {
+			logger.Error("failed to query for existing set", zap.Error(err))
+			return nil, fmt.Errorf("failed to query for existing set: %w", err)
+		}
 	}
 
 	newSet, err := db.Set.Create().SetName(setName).SetCode(setCode).Save(ctx)
@@ -407,18 +433,21 @@ func getOrCreateCardArtist(
 	logger *zap.Logger,
 	db *oracledb.Tx,
 	artistName string,
+	isFresh bool,
 ) (*oracledb.Artist, error) {
 	logger = logger.With(zap.String("artist_name", artistName))
 
-	existingArtist, err := db.Artist.Query().Where(artist.NameEQ(artistName)).Only(ctx)
-	if err == nil {
-		logger.Debug("artist already exists")
-		return existingArtist, nil
-	}
+	if !isFresh {
+		existingArtist, err := db.Artist.Query().Where(artist.NameEQ(artistName)).Only(ctx)
+		if err == nil {
+			logger.Debug("artist already exists")
+			return existingArtist, nil
+		}
 
-	if !oracledb.IsNotFound(err) {
-		logger.Error("failed to query for existing artist", zap.Error(err))
-		return nil, fmt.Errorf("failed to query for existing artist: %w", err)
+		if !oracledb.IsNotFound(err) {
+			logger.Error("failed to query for existing artist", zap.Error(err))
+			return nil, fmt.Errorf("failed to query for existing artist: %w", err)
+		}
 	}
 
 	newArtist, err := db.Artist.Create().SetName(artistName).Save(ctx)

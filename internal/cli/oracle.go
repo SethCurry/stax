@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"entgo.io/ent/dialect/sql"
+
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/mitchellh/go-homedir"
 	"go.uber.org/zap"
@@ -31,7 +33,7 @@ func dataDirectory() (string, error) {
 	return dataPath, nil
 }
 
-func connectToDatabase(ctx context.Context, logger *zap.Logger, disablePersist bool) (*oracledb.Client, error) {
+func connectToDatabase(ctx context.Context, logger *zap.Logger, disableJournal bool) (*oracledb.Client, error) {
 	dataDir, err := dataDirectory()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get data directory: %w", err)
@@ -40,14 +42,20 @@ func connectToDatabase(ctx context.Context, logger *zap.Logger, disablePersist b
 	dbPath := filepath.Join(dataDir, "oracle.sqlite3?_fk=1&cache=shared")
 	logger.Info("connecting to database", zap.String("path", dbPath))
 
-	if disablePersist {
-		dbPath += "&journal_mode=OFF"
-	}
-
-	conn, err := oracledb.Open("sqlite3", dbPath)
+	sqlConn, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
+
+	if disableJournal {
+		db := sqlConn.DB()
+		_, err := db.Exec("PRAGMA journal_mode = OFF")
+		if err != nil {
+			return nil, fmt.Errorf("failed to set journal_mode=OFF: %w", err)
+		}
+	}
+
+	conn := oracledb.NewClient(oracledb.Driver(sqlConn))
 
 	if err = conn.Schema.Create(ctx); err != nil {
 		return nil, fmt.Errorf("failed to create schema: %w", err)
