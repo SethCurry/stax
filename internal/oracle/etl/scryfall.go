@@ -21,10 +21,23 @@ import (
 // ScryfallCards reads all of the cards from the provided scryfall.BulkReader and creates
 // all of the SQL records implied by that object (set, artists, etc).
 func ScryfallCards(ctx context.Context, logger *zap.Logger, db *oracledb.Client, reader *scryfall.BulkReader[scryfall.Card]) error {
+	txn, err := db.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create initial transaction")
+	}
+
+	artistCache := make(map[string]int)
+	setCache := make(map[string]int)
+	cardCache := make(map[string]int)
+
 	for {
 		card, err := reader.Next()
 		if err != nil {
 			if err == io.EOF {
+				err = txn.Commit()
+				if err != nil {
+					logger.Error("failed to perform last commit", zap.Error(err))
+				}
 				logger.Debug("got EOF")
 				return nil
 			}
@@ -40,51 +53,81 @@ func ScryfallCards(ctx context.Context, logger *zap.Logger, db *oracledb.Client,
 		err = scryfallCardIngestor(
 			ctx,
 			logger.With(zap.String("card_name", card.Name)),
-			db,
-			card)
+			txn,
+			card,
+			artistCache,
+			setCache,
+			cardCache)
 		if err != nil {
 			return err
 		}
 	}
-	return nil
+	return txn.Commit()
 }
 
 func scryfallCardIngestor(
 	ctx context.Context,
 	logger *zap.Logger,
-	db *oracledb.Client,
+	db *oracledb.Tx,
 	row *scryfall.Card,
+	artistCache map[string]int,
+	setCache map[string]int,
+	cardCache map[string]int,
 ) error {
 	if row.OracleID == "" {
 		logger.Debug("ignoring card because it is missing an oracle ID")
 		return nil
 	}
 
-	gotCard, err := getOrCreateCard(ctx, logger, db, row)
-	if err != nil {
-		return fmt.Errorf("failed to get or create card: %w", err)
+	cardID := 0
+
+	if gotCardID, ok := cardCache[row.ID]; ok {
+		cardID = gotCardID
+	} else {
+		gotCard, err := getOrCreateCard(ctx, logger, db, row)
+		if err != nil {
+			return fmt.Errorf("failed to get or create card: %w", err)
+		}
+
+		cardCache[row.ID] = gotCard.ID
+		cardID = gotCard.ID
 	}
 
-	var cardArtist *oracledb.Artist
+	artistID := 0
 
 	if row.Artist != "" {
-		cardArtist, err = getOrCreateCardArtist(ctx, logger, db, row.Artist)
-		if err != nil {
-			return fmt.Errorf("failed to get or create card artist: %w", err)
+		if foundArtistID, ok := artistCache[row.Artist]; ok {
+			artistID = foundArtistID
+		} else {
+			cardArtist, err := getOrCreateCardArtist(ctx, logger, db, row.Artist)
+			if err != nil {
+				return fmt.Errorf("failed to get or create card artist: %w", err)
+			}
+			artistCache[row.Artist] = cardArtist.ID
+			artistID = cardArtist.ID
 		}
 	}
 
-	cardSet, err := getOrCreateSet(ctx, logger, db, row.SetName, row.SetCode)
-	if err != nil {
-		return fmt.Errorf("failed to get or create card set: %w", err)
+	setID := 0
+
+	if gotSetID, ok := setCache[row.SetCode]; ok {
+		setID = gotSetID
+	} else {
+		cardSet, err := getOrCreateSet(ctx, logger, db, row.SetName, row.SetCode)
+		if err != nil {
+			return fmt.Errorf("failed to get or create card set: %w", err)
+		}
+
+		setCache[row.SetCode] = cardSet.ID
+		setID = cardSet.ID
 	}
 
-	cardFace, err := getOrCreateCardFace(ctx, logger, db, row, gotCard)
+	cardFace, err := getOrCreateCardFace(ctx, logger, db, row, cardID)
 	if err != nil {
 		return fmt.Errorf("failed to get or create card face: %w", err)
 	}
 
-	cardPrinting, err := getOrCreatePrinting(ctx, logger, db, printing.Rarity(row.Rarity), cardArtist, cardSet, cardFace)
+	cardPrinting, err := getOrCreatePrinting(ctx, logger, db, printing.Rarity(row.Rarity), artistID, setID, cardFace)
 	if err != nil {
 		return fmt.Errorf("failed to get or create card printing: %w", err)
 	}
@@ -102,7 +145,7 @@ func scryfallCardIngestor(
 func createPrintingImagesIfNotExist(
 	ctx context.Context,
 	logger *zap.Logger,
-	db *oracledb.Client,
+	db *oracledb.Tx,
 	row *scryfall.Card,
 	cardPrinting *oracledb.Printing,
 ) error {
@@ -138,7 +181,7 @@ func createPrintingImagesIfNotExist(
 func createSinglePrintingImage(
 	ctx context.Context,
 	logger *zap.Logger,
-	db *oracledb.Client,
+	db *oracledb.Tx,
 	imageURL string,
 	imageType printingimage.ImageType,
 	cardPrinting *oracledb.Printing,
@@ -181,33 +224,33 @@ func createSinglePrintingImage(
 func getOrCreatePrinting(
 	ctx context.Context,
 	logger *zap.Logger, // Zap logger for logging purposes
-	db *oracledb.Client, // OracleDB client to interact with the database
+	db *oracledb.Tx, // OracleDB client to interact with the database
 	rarity printing.Rarity, // The rarity of the card face
-	gotArtist *oracledb.Artist, // Pointer to an artist entity (optional)
-	gotSet *oracledb.Set, // Set associated with the card face
+	gotArtistID int, // Pointer to an artist entity (optional)
+	gotSetID int, // Set associated with the card face
 	gotCardFace *oracledb.CardFace, // The card face we are dealing with
 ) (*oracledb.Printing, error) {
 	// Logger is updated with additional contextual information about the printing
 	logger = logger.With(
 		zap.String("rarity", string(rarity)),
-		zap.String("set_name", gotSet.Name),
+		zap.Int("set_id", gotSetID),
 		zap.String("card_face_name", gotCardFace.Name),
-		zap.Bool("has_artist", gotArtist != nil), // Checks if artist is present or not
+		zap.Bool("has_artist", gotArtistID != 0), // Checks if artist is present or not
 	)
 
 	// Predicate for the artist based on whether it exists or not
 	var artistPred predicate.Printing
-	if gotArtist != nil {
-		artistPred = printing.HasArtistWith(artist.IDEQ(gotArtist.ID))
+	if gotArtistID != 0 {
+		artistPred = printing.HasArtistWith(artist.IDEQ(gotArtistID))
 	} else {
 		artistPred = printing.Not(printing.HasArtist())
 	}
 
 	// Query to find an existing printing with the given parameters
 	existingPrinting, err := db.Printing.Query().Where(
-		printing.RarityEQ(rarity),                // Rarity of the card face
-		artistPred,                               // Artist predicate based on whether an artist is present or not
-		printing.HasSetWith(set.IDEQ(gotSet.ID)), // Set association of the printing
+		printing.RarityEQ(rarity),               // Rarity of the card face
+		artistPred,                              // Artist predicate based on whether an artist is present or not
+		printing.HasSetWith(set.IDEQ(gotSetID)), // Set association of the printing
 		printing.HasCardFaceWith(cardface.IDEQ(gotCardFace.ID))).Only(ctx)
 	if err == nil {
 		// If existingPrinting is found, a debug log is made and existing printing is returned
@@ -222,9 +265,9 @@ func getOrCreatePrinting(
 	}
 
 	// If no previous error occurred and the printing does not exist in the database, a new printing is created with given parameters
-	newPrintingQuery := db.Printing.Create().SetSet(gotSet).SetCardFace(gotCardFace).SetRarity(rarity)
-	if gotArtist != nil { // If an artist is present, it is set in the new printing query
-		newPrintingQuery = newPrintingQuery.SetArtist(gotArtist)
+	newPrintingQuery := db.Printing.Create().SetSetID(gotSetID).SetCardFace(gotCardFace).SetRarity(rarity)
+	if gotArtistID != 0 { // If an artist is present, it is set in the new printing query
+		newPrintingQuery = newPrintingQuery.SetArtistID(gotArtistID)
 	}
 
 	// The newly created printing is saved into the database and returned along with any errors that might have occurred during saving
@@ -242,15 +285,15 @@ func getOrCreatePrinting(
 func getOrCreateCardFace(
 	ctx context.Context,
 	logger *zap.Logger,
-	db *oracledb.Client,
+	db *oracledb.Tx,
 	row *scryfall.Card,
-	gotCard *oracledb.Card,
+	gotCardID int,
 ) (*oracledb.CardFace, error) {
 	logger = logger.With(zap.String("card_face_name", row.Name))
 
 	existingCardFace, err := db.CardFace.Query().Where(
 		cardface.NameEQ(row.Name),
-		cardface.HasCardWith(card.IDEQ(gotCard.ID)),
+		cardface.HasCardWith(card.IDEQ(gotCardID)),
 	).
 		Only(ctx)
 	if err == nil {
@@ -275,7 +318,7 @@ func getOrCreateCardFace(
 		SetManaCost(row.ManaCost).
 		SetTypeLine(row.TypeLine).
 		SetColors(strings.Join(row.Colors, "")).
-		SetCard(gotCard).
+		SetCardID(gotCardID).
 		Save(ctx)
 	if err != nil {
 		logger.Error("failed to create new card face", zap.Error(err))
@@ -290,7 +333,7 @@ func getOrCreateCardFace(
 func getOrCreateCard(
 	ctx context.Context,
 	logger *zap.Logger,
-	db *oracledb.Client,
+	db *oracledb.Tx,
 	row *scryfall.Card,
 ) (*oracledb.Card, error) {
 	logger = logger.With(
@@ -329,7 +372,7 @@ func getOrCreateCard(
 func getOrCreateSet(
 	ctx context.Context,
 	logger *zap.Logger,
-	db *oracledb.Client,
+	db *oracledb.Tx,
 	setName string,
 	setCode string,
 ) (*oracledb.Set, error) {
@@ -362,7 +405,7 @@ func getOrCreateSet(
 func getOrCreateCardArtist(
 	ctx context.Context,
 	logger *zap.Logger,
-	db *oracledb.Client,
+	db *oracledb.Tx,
 	artistName string,
 ) (*oracledb.Artist, error) {
 	logger = logger.With(zap.String("artist_name", artistName))

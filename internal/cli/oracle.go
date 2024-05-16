@@ -22,7 +22,7 @@ func dataDirectory() (string, error) {
 		return "", fmt.Errorf("failed to get user home directory: %w", err)
 	}
 
-	dataPath := filepath.Join(userHome, ".local", ".share", "stax")
+	dataPath := filepath.Join(userHome, ".local", "share", "stax")
 
 	if err = os.MkdirAll(dataPath, 0o755); err != nil {
 		return "", fmt.Errorf("failed to create data directory: %w", err)
@@ -31,10 +31,17 @@ func dataDirectory() (string, error) {
 	return dataPath, nil
 }
 
-func connectToDatabase(ctx context.Context) (*oracledb.Client, error) {
+func connectToDatabase(ctx context.Context, logger *zap.Logger, disablePersist bool) (*oracledb.Client, error) {
 	dataDir, err := dataDirectory()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get data directory: %w", err)
+	}
+
+	dbPath := filepath.Join(dataDir, "oracle.sqlite3?_fk=1&cache=shared")
+	logger.Info("connecting to database", zap.String("path", dbPath))
+
+	if disablePersist {
+		dbPath += "&journal_mode=OFF"
 	}
 
 	conn, err := oracledb.Open("sqlite3", filepath.Join(dataDir, "oracle.sqlite3?_fk=1&cache=shared"))
@@ -120,7 +127,7 @@ func (r *OracleLoadCmd) Run(ctx *Context) error {
 		}
 	}
 
-	dbClient, err := connectToDatabase(ctx.Context)
+	dbClient, err := connectToDatabase(ctx.Context, logger, true)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}

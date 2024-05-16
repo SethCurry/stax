@@ -12,7 +12,7 @@ import (
 type APICmd struct{}
 
 func (a *APICmd) Run(ctx *Context) error {
-	dbConn, err := connectToDatabase(context.Background())
+	dbConn, err := connectToDatabase(context.Background(), ctx.Logger, false)
 	if err != nil {
 		ctx.Logger.Fatal("failed to open connection to DB", zap.Error(err))
 	}
