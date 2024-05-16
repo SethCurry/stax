@@ -44,7 +44,7 @@ func connectToDatabase(ctx context.Context, logger *zap.Logger, disablePersist b
 		dbPath += "&journal_mode=OFF"
 	}
 
-	conn, err := oracledb.Open("sqlite3", filepath.Join(dataDir, "oracle.sqlite3?_fk=1&cache=shared"))
+	conn, err := oracledb.Open("sqlite3", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
