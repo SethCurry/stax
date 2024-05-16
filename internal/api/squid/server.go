@@ -24,6 +24,7 @@ func NewServer(oraDB *oracledb.Client, handlerLogger *zap.Logger) *Server {
 	return &Server{
 		handlerLogger: handlerLogger,
 		router:        chi.NewRouter(),
+		db:            oraDB,
 	}
 }
 

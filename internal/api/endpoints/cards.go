@@ -20,7 +20,7 @@ type CardResponse struct {
 func CardByName(ctx *squid.Context) error {
 	var params CardByNameQuery
 
-	if err := ctx.Request.UnmarshalForm(&params); err != nil {
+	if err := ctx.Request.UnmarshalQuery(&params); err != nil {
 		return err
 	}
 
@@ -36,6 +36,10 @@ func CardByName(ctx *squid.Context) error {
 
 	if params.Exact != "" {
 		query = query.Where(card.NameEQ(params.Exact))
+	}
+
+	if params.Fuzzy != "" {
+		query = query.Where(card.NameContainsFold(params.Fuzzy))
 	}
 
 	result, err := query.Only(ctx.Request.Context())

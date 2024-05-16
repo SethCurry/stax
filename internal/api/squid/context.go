@@ -44,6 +44,15 @@ func (r *RequestContext) UnmarshalForm(into interface{}) error {
 	return nil
 }
 
+func (r *RequestContext) UnmarshalQuery(into interface{}) error {
+	err := formDecoder.Decode(into, r.req.URL.Query())
+	if err != nil {
+		return fmt.Errorf("failed to parse URL query: %w")
+	}
+
+	return nil
+}
+
 type ResponseContext struct {
 	resp http.ResponseWriter
 }
