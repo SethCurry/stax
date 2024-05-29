@@ -380,48 +380,6 @@ func getOrCreateCardFace(
 	return newCardFace, nil
 }
 
-func getOrCreateCard(
-	ctx context.Context,
-	logger *zap.Logger,
-	db *oracledb.Tx,
-	row *scryfall.Card,
-	isFresh bool,
-) (*oracledb.Card, error) {
-	logger = logger.With(
-		zap.String("card_name", row.Name),
-		zap.String("oracle_id", row.OracleID),
-		zap.Strings("colors", row.Colors),
-	)
-
-	if !isFresh {
-		existingCard, err := db.Card.Query().Where(card.NameEQ(row.Name)).Only(ctx)
-		if err == nil {
-			logger.Debug("card already exists")
-			return existingCard, nil
-		}
-
-		if !oracledb.IsNotFound(err) {
-			logger.Error("failed to query for existing card", zap.Error(err))
-			return nil, fmt.Errorf("failed to query for existing card: %w", err)
-		}
-	}
-
-	// TODO write function to convert row.Colors to a bitfield
-	newCard, err := db.Card.Create().
-		SetName(row.Name).
-		SetOracleID(row.OracleID).
-		SetColorIdentity(0).
-		Save(ctx)
-	if err != nil {
-		logger.Error("failed to create new card", zap.Error(err))
-		return nil, fmt.Errorf("failed to create new card: %w", err)
-	}
-
-	logger.Info("created new card")
-
-	return newCard, nil
-}
-
 func getOrCreateSet(
 	ctx context.Context,
 	logger *zap.Logger,
