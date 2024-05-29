@@ -1,3 +1,4 @@
+// Package endpoints contains the HTTP handlers for the stax API.
 package endpoints
 
 import (
@@ -8,11 +9,36 @@ import (
 	"github.com/SethCurry/stax/internal/common"
 	"github.com/SethCurry/stax/internal/oracle/oracledb"
 	"github.com/SethCurry/stax/internal/oracle/oracledb/card"
+	"github.com/SethCurry/stax/internal/oracle/oracledb/predicate"
 )
 
 type CardByNameQuery struct {
 	Exact string `schema:"exact"`
 	Fuzzy string `schema:"fuzzy"`
+}
+
+func (c CardByNameQuery) Validate() error {
+	if c.Exact != "" && c.Fuzzy != "" {
+		return errors.New("exact and fuzzy cannot be used at the same time")
+	}
+
+	if c.Exact == "" && c.Fuzzy == "" {
+		return errors.New("either fuzzy or exact must be specified")
+	}
+
+	return nil
+}
+
+func (c CardByNameQuery) ToPredicate() predicate.Card {
+	if c.Exact != "" {
+		return card.NameEQ(c.Exact)
+	}
+
+	if c.Fuzzy != "" {
+		return card.NameContainsFold(c.Fuzzy)
+	}
+
+	return card.And()
 }
 
 func cardToResponse(crd *oracledb.Card) CardResponse {
@@ -38,25 +64,11 @@ func CardByName(ctx *squid.Context) error {
 		return err
 	}
 
-	if params.Exact == "" && params.Fuzzy == "" {
-		return errors.New("must provide either fuzzy or exact")
+	if err := params.Validate(); err != nil {
+		return err
 	}
 
-	if params.Exact != "" && params.Fuzzy != "" {
-		return errors.New("can provide either fuzzy or exact, not both")
-	}
-
-	query := ctx.DB.Card.Query()
-
-	if params.Exact != "" {
-		query = query.Where(card.NameEQ(params.Exact))
-	}
-
-	if params.Fuzzy != "" {
-		query = query.Where(card.NameContainsFold(params.Fuzzy))
-	}
-
-	result, err := query.WithFaces().Only(ctx.Request.Context())
+	result, err := ctx.DB.Card.Query().Where(params.ToPredicate()).WithFaces().Only(ctx.Request.Context())
 	if err != nil {
 		return fmt.Errorf("failed to query card: %w", err)
 	}

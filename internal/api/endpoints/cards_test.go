@@ -1,0 +1,53 @@
+package endpoints
+
+import (
+	"errors"
+	"testing"
+
+	"entgo.io/ent/dialect/sql"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestValidate(t *testing.T) {
+	tables := []struct {
+		c   CardByNameQuery
+		err error
+	}{
+		{CardByNameQuery{"Exact", "Fuzzy"}, errors.New("exact and fuzzy cannot be used at the same time")},
+		{CardByNameQuery{"", ""}, errors.New("either fuzzy or exact must be specified")},
+		{CardByNameQuery{"Exact", ""}, nil},
+		{CardByNameQuery{"", "Fuzzy"}, nil},
+	}
+	for _, table := range tables {
+		err := table.c.Validate()
+		if err != nil && err.Error() != table.err.Error() {
+			t.Errorf("Validation of %v failed, expected: '%s', got:  '%s'", table.c, table.err, err)
+		}
+	}
+}
+
+func TestAddToSQL(t *testing.T) {
+	// Assuming you have a function card.NameEQ and card.NameContainsFold which return appropriate conditions
+	tables := []struct {
+		name         string
+		c            CardByNameQuery
+		expected     string
+		expectedArgs []any
+	}{
+		{"fuzzy search", CardByNameQuery{"", "Fuzzy"}, "SELECT * FROM `cards` WHERE LOWER(`cards`.`name`) LIKE ?", []interface{}{"Fuzzy"}}, // You need to provide the expected SQL based on your actual implementation of card.NameEQ and card.NameContainsFold
+		{"exact search", CardByNameQuery{"Exact", ""}, "SELECT * FROM `cards` WHERE `cards`.`name` = ?", []interface{}{"Exact"}},
+		{"invalid search", CardByNameQuery{"", ""}, "SELECT * FROM `cards`", []interface{}{}},
+	}
+	for _, table := range tables {
+		t.Run(table.name, func(t *testing.T) {
+			pred := table.c.ToPredicate()
+
+			query := sql.Select("*").From(sql.Table("cards"))
+			pred(query)
+
+			asString, _ := query.Query()
+
+			assert.Equal(t, table.expected, asString)
+		})
+	}
+}
