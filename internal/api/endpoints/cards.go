@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/SethCurry/stax/internal/api/squid"
+	"github.com/SethCurry/stax/internal/common"
 	"github.com/SethCurry/stax/internal/oracle/oracledb"
 	"github.com/SethCurry/stax/internal/oracle/oracledb/card"
-	"github.com/SethCurry/stax/pkg/common"
 )
 
 type CardByNameQuery struct {

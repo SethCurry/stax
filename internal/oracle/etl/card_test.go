@@ -4,12 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/SethCurry/stax/internal/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestFindCardByName(t *testing.T) {
-	db := NewTestDB(t)
+	db := testutils.NewDB(t)
 
 	ctx := context.Background()
 
