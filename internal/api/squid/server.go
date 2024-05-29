@@ -10,16 +10,24 @@ import (
 	"go.uber.org/zap"
 )
 
+// HandlerFunc is a function for handling HTTP requests.
+// The handler is expected to write its own response to the request,
+// or to return an error (not both).
 type HandlerFunc func(*Context) error
 
+// NewErrorResponse creates a new *ErrorResponse object.
 func NewErrorResponse(err error) *ErrorResponse {
 	return &ErrorResponse{Err: err.Error()}
 }
 
+// ErrorResponse is an error that will be marshalled to JSON and
+// returned to the client.
 type ErrorResponse struct {
 	Err string `json:"error"`
 }
 
+// NewServer creates a new *Server that can serve HTTP requests.
+// It does not register any handlers, nor does it start serving.
 func NewServer(oraDB *oracledb.Client, handlerLogger *zap.Logger) *Server {
 	return &Server{
 		handlerLogger: handlerLogger,
@@ -45,16 +53,7 @@ func (s *Server) getContext(req *http.Request, resp http.ResponseWriter) (*Conte
 
 func (s *Server) wrapHandler(handler HandlerFunc) http.HandlerFunc {
 	return func(resp http.ResponseWriter, req *http.Request) {
-		var err error
-		var ctx *Context
-
-		defer func() {
-			if err != nil {
-				errorResponse(resp, err)
-			}
-		}()
-
-		ctx, err = s.getContext(req, resp)
+		ctx, err := s.getContext(req, resp)
 		if err != nil {
 			ctx.Logger.Error("failed to get transaction", zap.Error(err))
 			return
@@ -65,6 +64,7 @@ func (s *Server) wrapHandler(handler HandlerFunc) http.HandlerFunc {
 		err = handler(ctx)
 		if err != nil {
 			ctx.Logger.Error("function returned error", zap.Error(err))
+			errorResponse(resp, err)
 		}
 	}
 }

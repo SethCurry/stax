@@ -14,14 +14,20 @@ import (
 
 var formDecoder = schema.NewDecoder()
 
+// RequestContext captures an HTTP request.  It's mostly a wrapper
+// to provide additional functionality.
 type RequestContext struct {
 	req *http.Request
 }
 
+// Context returns the context.Context of the *http.Request underneat
+// this RequestContext.
 func (r *RequestContext) Context() context.Context {
 	return r.req.Context()
 }
 
+// UnmarshalJSON unmarshals the contents of the request body into the
+// provided struct.
 func (r *RequestContext) UnmarshalJSON(into interface{}) error {
 	defer r.req.Body.Close()
 
@@ -30,6 +36,11 @@ func (r *RequestContext) UnmarshalJSON(into interface{}) error {
 	return decoder.Decode(into)
 }
 
+// UnmarshalForm unmarshals any form data from an HTTP POST request into
+// the provided struct.
+//
+// This uses github.com/gorilla/schema so see their documentation for how to
+// use struct tags and what not.
 func (r *RequestContext) UnmarshalForm(into interface{}) error {
 	err := r.req.ParseForm()
 	if err != nil {
@@ -44,6 +55,11 @@ func (r *RequestContext) UnmarshalForm(into interface{}) error {
 	return nil
 }
 
+// UnmarshalQuery unmarshals the query parameters from an HTTP request into
+// the provided struct.
+//
+// This uses github.com/gorilla/schema so see their documentation for how to
+// use the struct tags and what not.
 func (r *RequestContext) UnmarshalQuery(into interface{}) error {
 	err := formDecoder.Decode(into, r.req.URL.Query())
 	if err != nil {
@@ -53,10 +69,17 @@ func (r *RequestContext) UnmarshalQuery(into interface{}) error {
 	return nil
 }
 
+// ResponseContext captures an HTTP response.  It's mostly a wrapper
+// around an http.ResponseWriter to provide additional functionality.
 type ResponseContext struct {
 	resp http.ResponseWriter
 }
 
+// WriteJSON writes the provided status code on the response, and then
+// writes a JSON-marshalled copy of the provided data to the body of that response.
+// It also sets the Content-Type to application/json.
+//
+// Use this any time you want to return JSONified data.
 func (r *ResponseContext) WriteJSON(status int, data interface{}) error {
 	marshalled, err := json.Marshal(data)
 	if err != nil {
@@ -70,6 +93,7 @@ func (r *ResponseContext) WriteJSON(status int, data interface{}) error {
 	return err
 }
 
+// NewContext initializes a new *Context object.
 func NewContext(req *http.Request, resp http.ResponseWriter, oraDB *oracledb.Tx, logger *zap.Logger) *Context {
 	return &Context{
 		Request: &RequestContext{
@@ -83,6 +107,9 @@ func NewContext(req *http.Request, resp http.ResponseWriter, oraDB *oracledb.Tx,
 	}
 }
 
+// Context is a wrapper around the entirety of an HTTP request's context.
+// It includes the request and response, as well as injected dependencies
+// like a logger and a database transaction.
 type Context struct {
 	Request  *RequestContext
 	Response *ResponseContext
