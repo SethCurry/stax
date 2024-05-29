@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/SethCurry/stax/internal/cli"
 	"github.com/alecthomas/kong"
@@ -26,8 +27,8 @@ func main() {
 		Level:            zap.NewAtomicLevelAt(logLevel),
 		Encoding:         "console",
 		Development:      true,
-		OutputPaths:      []string{"stderr"},
-		ErrorOutputPaths: []string{"stderr"},
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stdout"},
 		EncoderConfig: zapcore.EncoderConfig{
 			MessageKey:  "msg",
 			LevelKey:    "lvl",
@@ -41,11 +42,18 @@ func main() {
 	if err != nil {
 		ctx.FatalIfErrorf(err)
 	}
+	defer func() {
+		err := logger.Sync()
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+	}()
 
 	err = ctx.Run(&cli.Context{
 		Logger:  logger,
 		Context: context.Background(),
 	})
-
-	ctx.FatalIfErrorf(err)
+	if err != nil {
+		logger.Fatal("failed to execute command", zap.Error(err))
+	}
 }

@@ -1,0 +1,144 @@
+{{ define "content" }}
+  {{ range $contentIndex, $content := . }}
+  {{ if eq $content.Type "text" }}
+    {{$content.Value }}
+  {{ end }}
+  {{ if eq $content.Type "reference" }}
+    <a href="#rule-{{ElementID $content.Value}}">{{ $content.Value }}</a>
+  {{ end }}
+  {{ if eq $content.Type "symbol" }}
+    <i class="ms {{ ManaClass $content.Value }}"></i>
+  {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ define "example" }}
+  <div class="example">
+    <span class="example-title">
+      Example
+    </span>
+    <div class="example-body">
+      {{ template "content" . }}
+    </div>
+  </div>
+{{ end }}
+
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <link href="https://cdn.jsdelivr.net/npm/mana-font@latest/css/mana.css" rel="stylesheet" type="text/css" /> 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap" rel="stylesheet">
+  <style>
+    .section {
+      background-color: #46494C;
+      color: #b9b6b3;
+      padding: 0.5em;
+      margin: 0.5em;
+      border-radius: 1em;
+    }
+    .subsection {
+      background-color: #4C5C68;
+      color: #b3a397;
+      padding: 0.5em;
+      margin: 0.5em;
+      border-radius: 1em;
+    }
+    .rule {
+      background-color: #C5C3C6;
+      color: #3a3c39;
+      padding: 0.5em;
+      margin: 0.5em;
+      border-radius: 1em;
+    }
+    .subrule {
+      background-color: #DCDCDD;
+      color: #232322;
+      padding: 1em;
+      margin: 0.5em;
+      border-radius: 1em;
+    }
+    .example {
+      margin-left: 2em;
+      margin-right: 2em;
+      margin-top: 0.5em;
+      margin-bottom: 0.5em;
+      border-radius: 1em;
+      display: flex;
+      flex-direction: column;
+    }
+    .example-title {
+      flex 1 1 auto;
+      background-color: #4C5C68;
+      color: #b3a397;
+      border-top-left-radius: 1em;
+      border-top-right-radius: 1em;
+      padding: 0.5em;
+      font-size: 1.1em;
+    }
+    .example-body {
+      flex 5 1 auto;
+      border-bottom-left-radius: 1em;
+      border-bottom-right-radius: 1em;
+      padding-bottom: 1em;
+      background-color: #46494C;
+      color: #b9b6b3;
+      padding: 0.5em;
+    }
+    body {
+      padding: 1em;
+      background-color: #C5C3C6;
+      font-family: "Titillium Web", sans-serif;
+      font-style: normal;
+      font-weight: 300;
+      overflow-y: scroll;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <h2>Rules</h1>
+    {{ range $sectionNum, $sectionRule := .Sections }}
+    <div class="section">
+      <h3 id="section-{{$sectionNum}}">{{$sectionNum}}: {{ $sectionRule.Name }}</h2>
+      {{ range $subsectionNum, $subsectionRule := $sectionRule.Subsections }}
+      <div class="subsection">
+        <h4 id="rule-{{$subsectionNum}}">{{$subsectionNum}}: {{ $subsectionRule.Name }}</h3>
+        {{ range $ruleNum, $rule := $subsectionRule.Rules }}
+        <div class="rule" id="rule-{{$subsectionNum}}_{{$ruleNum}}">
+          {{$subsectionNum}}.{{$ruleNum}}:
+          {{ template "content" $rule.Contents }}
+
+          {{ range $exampleIndex, $example := $rule.Examples }}
+            {{ template "example" $example }}
+          {{ end }}
+
+          {{ range $subruleLetter, $subrule := $rule.Subrules }}
+          <div class="subrule" id="rule-{{$subsectionNum}}_{{$ruleNum}}{{$subruleLetter}}">
+            {{$subsectionNum}}.{{$ruleNum}}{{$subruleLetter}}: 
+
+            {{ template "content" $subrule.Contents }}
+
+            {{ range $exampleIndex, $example := $subrule.Examples }}
+              {{ template "example" $example }}
+            {{ end }}
+          </div>
+          {{end}}
+        </div>
+        {{end}}
+      </div>
+      {{ end }}
+    </div>
+    {{ end}}
+  </div>
+  <div>
+    <h2>Glossary</h1>
+    <ul>
+      {{ range $keyword, $definition := .Glossary }}
+      <li>{{$keyword}}: {{$definition}}</li>
+      {{ end }}
+    </ul>
+  </div>
+</body>
+</html>

@@ -20,6 +20,8 @@ type Root struct {
 	Oracle OracleCmd `cmd:"" help:"Oracle database commands"`
 
 	API APICmd `cmd:"" help:"Start the API server."`
+	// The rules command
+	Rules RulesCmd `cmd:"" help:"Rules commands"`
 
 	// The log level to use.
 	// This needs to be unmarshaled into a zapcore.Level.
