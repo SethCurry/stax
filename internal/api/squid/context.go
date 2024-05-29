@@ -47,7 +47,7 @@ func (r *RequestContext) UnmarshalForm(into interface{}) error {
 func (r *RequestContext) UnmarshalQuery(into interface{}) error {
 	err := formDecoder.Decode(into, r.req.URL.Query())
 	if err != nil {
-		return fmt.Errorf("failed to parse URL query: %w")
+		return fmt.Errorf("failed to parse URL query: %w", err)
 	}
 
 	return nil
@@ -63,6 +63,7 @@ func (r *ResponseContext) WriteJSON(status int, data interface{}) error {
 		return err
 	}
 
+	r.resp.Header().Set("Content-Type", "application/json")
 	r.resp.WriteHeader(status)
 
 	_, err = r.resp.Write(marshalled)

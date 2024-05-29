@@ -50,12 +50,7 @@ func (s *Server) wrapHandler(handler HandlerFunc) http.HandlerFunc {
 
 		defer func() {
 			if err != nil {
-				errResponse := NewErrorResponse(err)
-
-				marshalled, _ := json.Marshal(errResponse)
-
-				resp.WriteHeader(500)
-				resp.Write(marshalled)
+				errorResponse(resp, err)
 			}
 		}()
 
@@ -80,4 +75,20 @@ func (s *Server) Get(pattern string, handler HandlerFunc) {
 
 func (s *Server) Serve(listen string) error {
 	return http.ListenAndServe(listen, s.router)
+}
+
+func errorResponse(w http.ResponseWriter, gotErr error) {
+	statusCode := 500
+	errResponse := NewErrorResponse(gotErr)
+
+	if oracledb.IsNotFound(gotErr) {
+		statusCode = 400
+		errResponse = &ErrorResponse{
+			Err: "no results found",
+		}
+	}
+
+	marshalled, _ := json.Marshal(errResponse)
+	w.WriteHeader(statusCode)
+	w.Write(marshalled)
 }

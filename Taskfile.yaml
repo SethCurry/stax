@@ -30,3 +30,8 @@ tasks:
       - cmd/**/*.go
       - internal/**/*.go
       - pkg/**/*.go
+  local-api:
+    deps:
+      - build
+    cmds:
+      - ./stax api

@@ -29,6 +29,7 @@ func ScryfallCards(ctx context.Context, logger *zap.Logger, db *oracledb.Client,
 	artistCache := make(map[string]int)
 	setCache := make(map[string]int)
 	cardCache := make(map[string]int)
+	cardFaceCache := make(map[string][]cachedCardFace)
 
 	numCards, err := txn.Card.Query().Count(ctx)
 	if err != nil {
@@ -65,12 +66,18 @@ func ScryfallCards(ctx context.Context, logger *zap.Logger, db *oracledb.Client,
 			artistCache,
 			setCache,
 			cardCache,
+			cardFaceCache,
 			isFresh)
 		if err != nil {
 			return err
 		}
 	}
 	return txn.Commit()
+}
+
+type cachedCardFace struct {
+	Name string
+	ID   int
 }
 
 func scryfallCardIngestor(
@@ -81,6 +88,7 @@ func scryfallCardIngestor(
 	artistCache map[string]int,
 	setCache map[string]int,
 	cardCache map[string]int,
+	cardFacesCache map[string][]cachedCardFace,
 	isFresh bool,
 ) error {
 	if row.OracleID == "" {
@@ -90,7 +98,7 @@ func scryfallCardIngestor(
 
 	cardID := 0
 
-	if gotCardID, ok := cardCache[row.ID]; ok {
+	if gotCardID, ok := cardCache[row.OracleID]; ok {
 		cardID = gotCardID
 	} else {
 		gotCard, err := getOrCreateCard(ctx, logger, db, row, isFresh)
@@ -98,7 +106,7 @@ func scryfallCardIngestor(
 			return fmt.Errorf("failed to get or create card: %w", err)
 		}
 
-		cardCache[row.ID] = gotCard.ID
+		cardCache[row.OracleID] = gotCard.ID
 		cardID = gotCard.ID
 	}
 
@@ -131,12 +139,34 @@ func scryfallCardIngestor(
 		setID = cardSet.ID
 	}
 
-	cardFace, err := getOrCreateCardFace(ctx, logger, db, row, cardID, isFresh)
-	if err != nil {
-		return fmt.Errorf("failed to get or create card face: %w", err)
+	cardFaceID := 0
+	foundCardFace := false
+
+	facesForID, ok := cardFacesCache[row.OracleID]
+	if ok {
+		for _, v := range facesForID {
+			if v.Name == row.Name {
+				foundCardFace = true
+				cardFaceID = v.ID
+			}
+		}
 	}
 
-	cardPrinting, err := getOrCreatePrinting(ctx, logger, db, printing.Rarity(row.Rarity), artistID, setID, cardFace, isFresh)
+	if !foundCardFace {
+		cardFace, err := getOrCreateCardFace(ctx, logger, db, row, cardID, isFresh)
+		if err != nil {
+			return fmt.Errorf("failed to get or create card face: %w", err)
+		}
+
+		cardFaceID = cardFace.ID
+
+		cardFacesCache[row.OracleID] = append(facesForID, cachedCardFace{
+			Name: cardFace.Name,
+			ID:   cardFace.ID,
+		})
+	}
+
+	cardPrinting, err := getOrCreatePrinting(ctx, logger, db, printing.Rarity(row.Rarity), artistID, setID, cardFaceID, isFresh)
 	if err != nil {
 		return fmt.Errorf("failed to get or create card printing: %w", err)
 	}
@@ -180,7 +210,8 @@ func createPrintingImagesIfNotExist(
 				imageURI.uri,
 				imageURI.type_,
 				cardPrinting,
-				isFresh)
+				isFresh,
+			)
 		}
 	}
 
@@ -242,14 +273,13 @@ func getOrCreatePrinting(
 	rarity printing.Rarity, // The rarity of the card face
 	gotArtistID int, // Pointer to an artist entity (optional)
 	gotSetID int, // Set associated with the card face
-	gotCardFace *oracledb.CardFace, // The card face we are dealing with
+	gotCardFace int, // The card face we are dealing with
 	isFresh bool,
 ) (*oracledb.Printing, error) {
 	// Logger is updated with additional contextual information about the printing
 	logger = logger.With(
 		zap.String("rarity", string(rarity)),
 		zap.Int("set_id", gotSetID),
-		zap.String("card_face_name", gotCardFace.Name),
 		zap.Bool("has_artist", gotArtistID != 0), // Checks if artist is present or not
 	)
 
@@ -267,7 +297,7 @@ func getOrCreatePrinting(
 			printing.RarityEQ(rarity),               // Rarity of the card face
 			artistPred,                              // Artist predicate based on whether an artist is present or not
 			printing.HasSetWith(set.IDEQ(gotSetID)), // Set association of the printing
-			printing.HasCardFaceWith(cardface.IDEQ(gotCardFace.ID))).Only(ctx)
+			printing.HasCardFaceWith(cardface.IDEQ(gotCardFace))).Only(ctx)
 		if err == nil {
 			// If existingPrinting is found, a debug log is made and existing printing is returned
 			logger.Debug("printing already exists")
@@ -282,7 +312,7 @@ func getOrCreatePrinting(
 	}
 
 	// If no previous error occurred and the printing does not exist in the database, a new printing is created with given parameters
-	newPrintingQuery := db.Printing.Create().SetSetID(gotSetID).SetCardFace(gotCardFace).SetRarity(rarity)
+	newPrintingQuery := db.Printing.Create().SetSetID(gotSetID).SetCardFaceID(gotCardFace).SetRarity(rarity)
 	if gotArtistID != 0 { // If an artist is present, it is set in the new printing query
 		newPrintingQuery = newPrintingQuery.SetArtistID(gotArtistID)
 	}
