@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/SethCurry/stax/internal/oracle/oracledb/card"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,7 +43,7 @@ func TestAddToSQL(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			pred := table.c.ToPredicate()
 
-			query := sql.Select("*").From(sql.Table("cards"))
+			query := sql.Select("*").From(sql.Table(card.Table))
 			pred(query)
 
 			asString, _ := query.Query()
