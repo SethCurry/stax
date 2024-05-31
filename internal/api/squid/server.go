@@ -59,12 +59,15 @@ func (s *Server) wrapHandler(handler HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		defer ctx.DB.Commit()
+		err = ctx.DB.Commit()
+		if err != nil {
+			ctx.Logger.Error("failed to commit transaction after running", zap.Error(err))
+		}
 
 		err = handler(ctx)
 		if err != nil {
 			ctx.Logger.Error("function returned error", zap.Error(err))
-			errorResponse(resp, err)
+			s.errorResponse(resp, err)
 		}
 	}
 }
@@ -77,7 +80,7 @@ func (s *Server) Serve(listen string) error {
 	return http.ListenAndServe(listen, s.router)
 }
 
-func errorResponse(w http.ResponseWriter, gotErr error) {
+func (s *Server) errorResponse(w http.ResponseWriter, gotErr error) {
 	statusCode := 500
 	errResponse := NewErrorResponse(gotErr)
 
@@ -88,7 +91,15 @@ func errorResponse(w http.ResponseWriter, gotErr error) {
 		}
 	}
 
-	marshalled, _ := json.Marshal(errResponse)
+	marshalled, err := json.Marshal(errResponse)
+	if err != nil {
+		s.handlerLogger.Error("failed to marshal error response", zap.Error(err))
+	}
+
 	w.WriteHeader(statusCode)
-	w.Write(marshalled)
+
+	_, err = w.Write(marshalled)
+	if err != nil {
+		s.handlerLogger.Error("failed to write response", zap.Error(err))
+	}
 }
