@@ -3,8 +3,8 @@ package requests
 import (
 	"errors"
 
-	"github.com/SethCurry/stax/internal/oracle/oracledb/card"
-	"github.com/SethCurry/stax/internal/oracle/oracledb/predicate"
+	"github.com/SethCurry/stax/internal/bones/card"
+	"github.com/SethCurry/stax/internal/bones/predicate"
 )
 
 type CardByName struct {

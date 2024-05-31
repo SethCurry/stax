@@ -7,7 +7,7 @@ import (
 	"github.com/SethCurry/stax/internal/api/requests"
 	"github.com/SethCurry/stax/internal/api/responses"
 	"github.com/SethCurry/stax/internal/api/squid"
-	"github.com/SethCurry/stax/internal/oracle/oracledb/card"
+	"github.com/SethCurry/stax/internal/bones/card"
 )
 
 // CardByName searched for a single card via its name.  It should

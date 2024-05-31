@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/SethCurry/stax/internal/oracle/oracledb/card"
+	"github.com/SethCurry/stax/internal/bones/card"
 	"github.com/stretchr/testify/assert"
 )
 

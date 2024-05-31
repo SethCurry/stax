@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/SethCurry/stax/internal/oracle/oracledb"
+	"github.com/SethCurry/stax/internal/bones"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
@@ -28,7 +28,7 @@ type ErrorResponse struct {
 
 // NewServer creates a new *Server that can serve HTTP requests.
 // It does not register any handlers, nor does it start serving.
-func NewServer(oraDB *oracledb.Client, handlerLogger *zap.Logger) *Server {
+func NewServer(oraDB *bones.Client, handlerLogger *zap.Logger) *Server {
 	return &Server{
 		handlerLogger: handlerLogger,
 		router:        chi.NewRouter(),
@@ -39,7 +39,7 @@ func NewServer(oraDB *oracledb.Client, handlerLogger *zap.Logger) *Server {
 type Server struct {
 	handlerLogger *zap.Logger
 	router        chi.Router
-	db            *oracledb.Client
+	db            *bones.Client
 }
 
 func (s *Server) getContext(req *http.Request, resp http.ResponseWriter) (*Context, error) {
@@ -84,7 +84,7 @@ func (s *Server) errorResponse(w http.ResponseWriter, gotErr error) {
 	statusCode := 500
 	errResponse := NewErrorResponse(gotErr)
 
-	if oracledb.IsNotFound(gotErr) {
+	if bones.IsNotFound(gotErr) {
 		statusCode = 400
 		errResponse = &ErrorResponse{
 			Err: "no results found",

@@ -8,13 +8,13 @@ vars:
 tasks:
   ent:
     cmds:
-      - go generate ./oracledb
-    dir: ./internal/oracle
+      - go generate ./bones
+    dir: ./internal
     sources:
-      - oracledb/schema/*.go
+      - bones/schema/*.go
     generates:
-      - oracledb/*.go
-      - oracledb/**/*.go
+      - bones/*.go
+      - bones/**/*.go
   lint:
     cmds:
       - golangci-lint run

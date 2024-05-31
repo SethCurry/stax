@@ -8,7 +8,7 @@ import (
 
 	"github.com/gorilla/schema"
 
-	"github.com/SethCurry/stax/internal/oracle/oracledb"
+	"github.com/SethCurry/stax/internal/bones"
 	"go.uber.org/zap"
 )
 
@@ -94,7 +94,7 @@ func (r *ResponseContext) WriteJSON(status int, data interface{}) error {
 }
 
 // NewContext initializes a new *Context object.
-func NewContext(req *http.Request, resp http.ResponseWriter, oraDB *oracledb.Tx, logger *zap.Logger) *Context {
+func NewContext(req *http.Request, resp http.ResponseWriter, oraDB *bones.Tx, logger *zap.Logger) *Context {
 	return &Context{
 		Request: &RequestContext{
 			req: req,
@@ -114,5 +114,5 @@ type Context struct {
 	Request  *RequestContext
 	Response *ResponseContext
 	Logger   *zap.Logger
-	DB       *oracledb.Tx
+	DB       *bones.Tx
 }

@@ -6,11 +6,11 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/SethCurry/stax/internal/oracle/oracledb"
+	"github.com/SethCurry/stax/internal/bones"
 )
 
-func NewDB(t *testing.T) *oracledb.Client {
-	conn, err := oracledb.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+func NewDB(t *testing.T) *bones.Client {
+	conn, err := bones.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	if err != nil {
 		t.Fatalf("failed to create test database: %v", err)
 	}
