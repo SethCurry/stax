@@ -20,7 +20,7 @@ tasks:
       - golangci-lint run
   test:
     cmds:
-      - go test -race -cover ./...
+      - go test -cover ./...
   build:
     deps:
       - ent

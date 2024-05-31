@@ -19,6 +19,7 @@ type CardSearch struct {
 	Cards []Card `json:"cards"`
 }
 
+// CardFromDB converts a single Card to a Card response object.
 func CardFromDB(crd *oracledb.Card) Card {
 	return Card{
 		Name:     crd.Name,
@@ -31,6 +32,7 @@ func CardFromDB(crd *oracledb.Card) Card {
 	}
 }
 
+// CardsFromDB converts a slice of database cards to Card response objects.
 func CardsFromDB(crds []*oracledb.Card) []Card {
 	return common.Map(crds, CardFromDB)
 }

@@ -10,6 +10,8 @@ import (
 	"github.com/SethCurry/stax/internal/oracle/oracledb/card"
 )
 
+// CardByName searched for a single card via its name.  It should
+// only ever return a single result.
 func CardByName(ctx *squid.Context) error {
 	var params requests.CardByName
 
@@ -31,6 +33,8 @@ func CardByName(ctx *squid.Context) error {
 	return ctx.Response.WriteJSON(200, resp)
 }
 
+// CardSearch searches for cards based on the provided query.  It returns
+// a list of those cards.
 func CardSearch(ctx *squid.Context) error {
 	var params requests.CardSearch
 
