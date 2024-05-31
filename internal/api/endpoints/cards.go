@@ -2,63 +2,16 @@
 package endpoints
 
 import (
-	"errors"
 	"fmt"
 
+	"github.com/SethCurry/stax/internal/api/requests"
+	"github.com/SethCurry/stax/internal/api/responses"
 	"github.com/SethCurry/stax/internal/api/squid"
-	"github.com/SethCurry/stax/internal/common"
-	"github.com/SethCurry/stax/internal/oracle/oracledb"
 	"github.com/SethCurry/stax/internal/oracle/oracledb/card"
-	"github.com/SethCurry/stax/internal/oracle/oracledb/predicate"
 )
 
-type CardByNameQuery struct {
-	Exact string `schema:"exact"`
-	Fuzzy string `schema:"fuzzy"`
-}
-
-func (c CardByNameQuery) Validate() error {
-	if c.Exact != "" && c.Fuzzy != "" {
-		return errors.New("exact and fuzzy cannot be used at the same time")
-	}
-
-	if c.Exact == "" && c.Fuzzy == "" {
-		return errors.New("either fuzzy or exact must be specified")
-	}
-
-	return nil
-}
-
-func (c CardByNameQuery) ToPredicate() predicate.Card {
-	if c.Exact != "" {
-		return card.NameEQ(c.Exact)
-	}
-
-	if c.Fuzzy != "" {
-		return card.NameContainsFold(c.Fuzzy)
-	}
-
-	return card.And()
-}
-
-func cardToResponse(crd *oracledb.Card) CardResponse {
-	return CardResponse{
-		Name:     crd.Name,
-		OracleID: crd.OracleID,
-		Faces: common.Map(crd.Edges.Faces, func(f *oracledb.CardFace) CardFace {
-			return CardFace{
-				OracleText: f.OracleText,
-			}
-		}),
-	}
-}
-
-func cardsToResponse(crds []*oracledb.Card) []CardResponse {
-	return common.Map(crds, cardToResponse)
-}
-
 func CardByName(ctx *squid.Context) error {
-	var params CardByNameQuery
+	var params requests.CardByName
 
 	if err := ctx.Request.UnmarshalQuery(&params); err != nil {
 		return err
@@ -73,31 +26,13 @@ func CardByName(ctx *squid.Context) error {
 		return fmt.Errorf("failed to query card: %w", err)
 	}
 
-	resp := cardToResponse(result)
+	resp := responses.CardFromDB(result)
 
 	return ctx.Response.WriteJSON(200, resp)
 }
 
-type CardSearchRequest struct {
-	Name string `schema:"name"`
-}
-
-type CardFace struct {
-	OracleText string `json:"oracle_text"`
-}
-
-type CardResponse struct {
-	Name     string     `json:"name"`
-	OracleID string     `json:"oracle_id"`
-	Faces    []CardFace `json:"faces"`
-}
-
-type CardSearchResponse struct {
-	Cards []CardResponse `json:"cards"`
-}
-
 func CardSearch(ctx *squid.Context) error {
-	var params CardSearchRequest
+	var params requests.CardSearch
 
 	if err := ctx.Request.UnmarshalQuery(&params); err != nil {
 		return err
@@ -114,9 +49,9 @@ func CardSearch(ctx *squid.Context) error {
 		return fmt.Errorf("failed to query for cards: %w", err)
 	}
 
-	cards := cardsToResponse(results)
+	cards := responses.CardsFromDB(results)
 
-	return ctx.Response.WriteJSON(200, CardSearchResponse{
+	return ctx.Response.WriteJSON(200, responses.CardSearch{
 		Cards: cards,
 	})
 }

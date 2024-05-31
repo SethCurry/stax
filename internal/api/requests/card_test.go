@@ -1,4 +1,4 @@
-package endpoints
+package requests
 
 import (
 	"errors"
@@ -11,13 +11,13 @@ import (
 
 func TestValidate(t *testing.T) {
 	tables := []struct {
-		c   CardByNameQuery
+		c   CardByName
 		err error
 	}{
-		{CardByNameQuery{"Exact", "Fuzzy"}, errors.New("exact and fuzzy cannot be used at the same time")},
-		{CardByNameQuery{"", ""}, errors.New("either fuzzy or exact must be specified")},
-		{CardByNameQuery{"Exact", ""}, nil},
-		{CardByNameQuery{"", "Fuzzy"}, nil},
+		{CardByName{"Exact", "Fuzzy"}, errors.New("exact and fuzzy cannot be used at the same time")},
+		{CardByName{"", ""}, errors.New("either fuzzy or exact must be specified")},
+		{CardByName{"Exact", ""}, nil},
+		{CardByName{"", "Fuzzy"}, nil},
 	}
 	for _, table := range tables {
 		err := table.c.Validate()
@@ -31,13 +31,13 @@ func TestAddToSQL(t *testing.T) {
 	// Assuming you have a function card.NameEQ and card.NameContainsFold which return appropriate conditions
 	tables := []struct {
 		name         string
-		c            CardByNameQuery
+		c            CardByName
 		expected     string
 		expectedArgs []any
 	}{
-		{"fuzzy search", CardByNameQuery{"", "Fuzzy"}, "SELECT * FROM `cards` WHERE LOWER(`cards`.`name`) LIKE ?", []interface{}{"Fuzzy"}}, // You need to provide the expected SQL based on your actual implementation of card.NameEQ and card.NameContainsFold
-		{"exact search", CardByNameQuery{"Exact", ""}, "SELECT * FROM `cards` WHERE `cards`.`name` = ?", []interface{}{"Exact"}},
-		{"invalid search", CardByNameQuery{"", ""}, "SELECT * FROM `cards`", []interface{}{}},
+		{"fuzzy search", CardByName{"", "Fuzzy"}, "SELECT * FROM `cards` WHERE LOWER(`cards`.`name`) LIKE ?", []interface{}{"Fuzzy"}}, // You need to provide the expected SQL based on your actual implementation of card.NameEQ and card.NameContainsFold
+		{"exact search", CardByName{"Exact", ""}, "SELECT * FROM `cards` WHERE `cards`.`name` = ?", []interface{}{"Exact"}},
+		{"invalid search", CardByName{"", ""}, "SELECT * FROM `cards`", []interface{}{}},
 	}
 	for _, table := range tables {
 		t.Run(table.name, func(t *testing.T) {
