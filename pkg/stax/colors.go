@@ -1,6 +1,7 @@
 package stax
 
-// WUBRG
+// ColorField stores a set of colors for a card, like its colors
+// or its color identity.
 type ColorField uint8
 
 func (c *ColorField) SetWhite(w bool) {
