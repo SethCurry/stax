@@ -31,6 +31,24 @@ func TestTokenize(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "quoted literal",
+			query: `name="Some Long Name"`,
+			expected: []Token{
+				{
+					Family: FamilyLiteral,
+					Value:  "name",
+				},
+				{
+					Family: FamilyOperator,
+					Value:  "=",
+				},
+				{
+					Family: FamilyLiteral,
+					Value:  "Some Long Name",
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
