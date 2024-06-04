@@ -1,9 +1,9 @@
 package ql
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
+
+	"github.com/SethCurry/stax/internal/common"
 )
 
 type Keyword string
@@ -40,6 +40,16 @@ func isKeyword(item string) bool {
 	}
 
 	return false
+}
+
+func tokenLiteralsToKeywords(tokens []Token) []Token {
+	return common.Map(tokens, func(t Token) Token {
+		if isKeyword(t.Value) {
+			t.Family = FamilyKeyword
+		}
+
+		return t
+	})
 }
 
 type tokenizer struct {
@@ -181,11 +191,8 @@ func (t *tokenizer) run() ([]Token, error) {
 			}
 		}
 
-		marshalled, _ := json.Marshal(ret)
-		fmt.Println(string(marshalled))
-
 		if !done {
-			return ret, nil
+			return tokenLiteralsToKeywords(ret), nil
 		}
 	}
 }
