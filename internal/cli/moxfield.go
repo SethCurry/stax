@@ -2,11 +2,11 @@ package cli
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/SethCurry/stax/pkg/moxfield"
+	"github.com/SethCurry/stax/pkg/stax"
 	"go.uber.org/zap"
 )
 
@@ -21,7 +21,7 @@ type MoxfieldExportUserCmd struct {
 }
 
 func (m *MoxfieldExportUserCmd) Run(ctx *Context) error {
-	logger := ctx.Logger.With()
+	logger := ctx.Logger
 
 	client := moxfield.NewClient(nil)
 
@@ -31,22 +31,28 @@ func (m *MoxfieldExportUserCmd) Run(ctx *Context) error {
 	}
 
 	for _, v := range decks.Data {
+		logger := logger.With(zap.String("deck_name", v.Name))
+
 		lines, err := client.Decks.GetDeckList(context.Background(), v.ID)
 		if err != nil {
 			logger.Error("failed to get deck list", zap.Error(err))
 			continue
 		}
 
+		outputPath := filepath.Join(m.OutputDirectory, v.Name+".txt")
+		logger = logger.With(zap.String("file_path", outputPath))
+
 		fd, err := os.Create(filepath.Join(m.OutputDirectory, v.Name+".txt"))
 		if err != nil {
 			logger.Error("failed to create moxfield export file", zap.Error(err))
 		}
+		defer fd.Close()
+
+		writer := stax.NewMTGODecklistWriter(fd)
 
 		for _, l := range lines {
-			fd.WriteString(fmt.Sprintf("%d %s\n", l.Quantity, l.Name))
+			writer.AddCard(l.Name, l.Quantity)
 		}
-
-		fd.Close()
 	}
 
 	return nil

@@ -21,3 +21,13 @@ func Filter[T any](items []T, fn func(T) bool) []T {
 
 	return ret
 }
+
+func Acc[T any, P any](items []T, fn func(P, T) P) P {
+	var ret P
+
+	for _, v := range items {
+		ret = fn(ret, v)
+	}
+
+	return ret
+}

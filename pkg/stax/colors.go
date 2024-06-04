@@ -4,62 +4,100 @@ package stax
 // or its color identity.
 type ColorField uint8
 
-func (c *ColorField) SetWhite(w bool) {
-	if w {
-		*c |= 0b10000
+func (c *ColorField) setColor(color *Color, on bool) {
+	if on {
+		*c |= color.ColorField()
 	} else {
-		*c &^= 0b10000
+		*c &^= color.ColorField()
 	}
+}
+
+func (c *ColorField) SetWhite(w bool) {
+	c.setColor(ColorWhite, w)
+}
+
+func (c ColorField) hasColor(color *Color) bool {
+	return c&color.ColorField() == color.ColorField()
 }
 
 func (c ColorField) HasWhite() bool {
-	return c&0b10000 == 0b10000
+	return c.hasColor(ColorWhite)
 }
 
 func (c *ColorField) SetBlue(w bool) {
-	if w {
-		*c |= 0b01000
-	} else {
-		*c &^= 0b01000
-	}
+	c.setColor(ColorBlue, w)
 }
 
 func (c ColorField) HasBlue() bool {
-	return c&0b01000 == 0b01000
+	return c.hasColor(ColorBlue)
 }
 
 func (c *ColorField) SetBlack(w bool) {
-	if w {
-		*c |= 0b00100
-	} else {
-		*c &^= 0b00100
-	}
+	c.setColor(ColorBlack, w)
 }
 
 func (c ColorField) HasBlack() bool {
-	return c&0b00100 == 0b00100
+	return c.hasColor(ColorBlack)
 }
 
 func (c *ColorField) SetRed(w bool) {
-	if w {
-		*c |= 0b00010
-	} else {
-		*c &^= 0b00010
-	}
+	c.setColor(ColorRed, w)
 }
 
 func (c ColorField) HasRed() bool {
-	return c&0b00010 == 0b00010
+	return c.hasColor(ColorRed)
 }
 
 func (c *ColorField) SetGreen(w bool) {
-	if w {
-		*c |= 0b00001
-	} else {
-		*c &^= 0b00001
-	}
+	c.setColor(ColorGreen, w)
 }
 
 func (c ColorField) HasGreen() bool {
-	return c&0b00001 == 0b00001
+	return c.hasColor(ColorGreen)
 }
+
+type Color struct {
+	name       string
+	char       string
+	colorField ColorField
+}
+
+func (c Color) Name() string {
+	return c.name
+}
+
+func (c Color) Char() string {
+	return c.char
+}
+
+func (c Color) ColorField() ColorField {
+	return c.colorField
+}
+
+var (
+	ColorRed *Color = &Color{
+		name:       "Red",
+		char:       "R",
+		colorField: ColorField(0b00010),
+	}
+	ColorBlue *Color = &Color{
+		name:       "Blue",
+		char:       "U",
+		colorField: ColorField(0b01000),
+	}
+	ColorBlack *Color = &Color{
+		name:       "Black",
+		char:       "B",
+		colorField: ColorField(0b00100),
+	}
+	ColorWhite *Color = &Color{
+		name:       "White",
+		char:       "W",
+		colorField: ColorField(0b10000),
+	}
+	ColorGreen *Color = &Color{
+		name:       "Green",
+		char:       "G",
+		colorField: ColorField(0b00001),
+	}
+)
