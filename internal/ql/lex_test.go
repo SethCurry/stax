@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTokenize(t *testing.T) {
+func TestLex(t *testing.T) {
 	testCases := []struct {
 		name     string
 		query    string
@@ -49,11 +49,45 @@ func TestTokenize(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "has keyword",
+			query: "name=something OR name=other",
+			expected: []Token{
+				{
+					Family: FamilyLiteral,
+					Value:  "name",
+				},
+				{
+					Family: FamilyOperator,
+					Value:  "=",
+				},
+				{
+					Family: FamilyLiteral,
+					Value:  "something",
+				},
+				{
+					Family: FamilyKeyword,
+					Value:  "OR",
+				},
+				{
+					Family: FamilyLiteral,
+					Value:  "name",
+				},
+				{
+					Family: FamilyOperator,
+					Value:  "=",
+				},
+				{
+					Family: FamilyLiteral,
+					Value:  "other",
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := Tokenize(tc.query)
+			got, err := Lex(tc.query)
 
 			require.NoError(t, err)
 

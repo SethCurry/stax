@@ -2,6 +2,7 @@ package ql
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/SethCurry/stax/internal/common"
 )
@@ -34,7 +35,7 @@ type Token struct {
 
 func isKeyword(item string) bool {
 	for _, v := range Keywords {
-		if item == string(v) {
+		if strings.ToUpper(item) == string(v) {
 			return true
 		}
 	}
@@ -45,6 +46,7 @@ func isKeyword(item string) bool {
 func tokenLiteralsToKeywords(tokens []Token) []Token {
 	return common.Map(tokens, func(t Token) Token {
 		if isKeyword(t.Value) {
+			t.Value = strings.ToUpper(t.Value)
 			t.Family = FamilyKeyword
 		}
 
@@ -52,36 +54,36 @@ func tokenLiteralsToKeywords(tokens []Token) []Token {
 	})
 }
 
-type tokenizer struct {
+type lexReader struct {
 	index int
 	query []rune
 }
 
-func (t *tokenizer) next() (rune, bool) {
-	if t.index >= len(t.query) {
+func (l *lexReader) next() (rune, bool) {
+	if l.index >= len(l.query) {
 		return ' ', false
 	}
 
-	char := t.query[t.index]
+	char := l.query[l.index]
 
-	t.index++
+	l.index++
 
 	return char, true
 }
 
-func (t *tokenizer) peek() (rune, bool) {
-	if t.index >= len(t.query) {
+func (l *lexReader) peek() (rune, bool) {
+	if l.index >= len(l.query) {
 		return ' ', false
 	}
 
-	return t.query[t.index], true
+	return l.query[l.index], true
 }
 
-func (t *tokenizer) readUntilOneOf(matches []rune) (string, bool) {
+func (l *lexReader) readUntilOneOf(matches []rune) (string, bool) {
 	acc := ""
 
 	for {
-		nextChar, ok := t.peek()
+		nextChar, ok := l.peek()
 		if !ok {
 			return acc, false
 		}
@@ -91,12 +93,12 @@ func (t *tokenizer) readUntilOneOf(matches []rune) (string, bool) {
 				return acc, true
 			}
 		}
-		t.next()
+		l.next()
 		acc += string(nextChar)
 	}
 }
 
-func (t *tokenizer) readUntilSeparator() (string, bool) {
+func (l *lexReader) readUntilSeparator() (string, bool) {
 	separators := []rune{
 		' ',
 		'"',
@@ -105,12 +107,13 @@ func (t *tokenizer) readUntilSeparator() (string, bool) {
 		'<',
 		'(',
 		')',
+		':',
 	}
 
-	return t.readUntilOneOf(separators)
+	return l.readUntilOneOf(separators)
 }
 
-func (t *tokenizer) run() ([]Token, error) {
+func lex(t *lexReader) ([]Token, error) {
 	var ret []Token
 
 	for {
@@ -149,7 +152,7 @@ func (t *tokenizer) run() ([]Token, error) {
 						Value:  "<",
 					})
 				}
-			case "=":
+			case "=", ":":
 				if next, ok := t.peek(); ok && (next == '>' || next == '<') {
 					ret = append(ret, Token{
 						Family: FamilyOperator,
@@ -197,10 +200,10 @@ func (t *tokenizer) run() ([]Token, error) {
 	}
 }
 
-func Tokenize(input string) ([]Token, error) {
-	proc := tokenizer{
+func Lex(input string) ([]Token, error) {
+	proc := &lexReader{
 		query: []rune(input),
 	}
 
-	return proc.run()
+	return lex(proc)
 }
