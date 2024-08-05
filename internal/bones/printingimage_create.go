@@ -32,6 +32,20 @@ func (pic *PrintingImageCreate) SetImageType(pt printingimage.ImageType) *Printi
 	return pic
 }
 
+// SetLocalPath sets the "local_path" field.
+func (pic *PrintingImageCreate) SetLocalPath(s string) *PrintingImageCreate {
+	pic.mutation.SetLocalPath(s)
+	return pic
+}
+
+// SetNillableLocalPath sets the "local_path" field if the given value is not nil.
+func (pic *PrintingImageCreate) SetNillableLocalPath(s *string) *PrintingImageCreate {
+	if s != nil {
+		pic.SetLocalPath(*s)
+	}
+	return pic
+}
+
 // SetPrintingID sets the "printing" edge to the Printing entity by ID.
 func (pic *PrintingImageCreate) SetPrintingID(id int) *PrintingImageCreate {
 	pic.mutation.SetPrintingID(id)
@@ -134,6 +148,10 @@ func (pic *PrintingImageCreate) createSpec() (*PrintingImage, *sqlgraph.CreateSp
 	if value, ok := pic.mutation.ImageType(); ok {
 		_spec.SetField(printingimage.FieldImageType, field.TypeEnum, value)
 		_node.ImageType = value
+	}
+	if value, ok := pic.mutation.LocalPath(); ok {
+		_spec.SetField(printingimage.FieldLocalPath, field.TypeString, value)
+		_node.LocalPath = value
 	}
 	if nodes := pic.mutation.PrintingIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

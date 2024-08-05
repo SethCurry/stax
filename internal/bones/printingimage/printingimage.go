@@ -18,6 +18,8 @@ const (
 	FieldURL = "url"
 	// FieldImageType holds the string denoting the image_type field in the database.
 	FieldImageType = "image_type"
+	// FieldLocalPath holds the string denoting the local_path field in the database.
+	FieldLocalPath = "local_path"
 	// EdgePrinting holds the string denoting the printing edge name in mutations.
 	EdgePrinting = "printing"
 	// Table holds the table name of the printingimage in the database.
@@ -36,6 +38,7 @@ var Columns = []string{
 	FieldID,
 	FieldURL,
 	FieldImageType,
+	FieldLocalPath,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "printing_images"
@@ -107,6 +110,11 @@ func ByURL(opts ...sql.OrderTermOption) OrderOption {
 // ByImageType orders the results by the image_type field.
 func ByImageType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldImageType, opts...).ToFunc()
+}
+
+// ByLocalPath orders the results by the local_path field.
+func ByLocalPath(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLocalPath, opts...).ToFunc()
 }
 
 // ByPrintingField orders the results by printing field.

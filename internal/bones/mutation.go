@@ -2762,6 +2762,7 @@ type PrintingImageMutation struct {
 	id              *int
 	url             *string
 	image_type      *printingimage.ImageType
+	local_path      *string
 	clearedFields   map[string]struct{}
 	printing        *int
 	clearedprinting bool
@@ -2940,6 +2941,55 @@ func (m *PrintingImageMutation) ResetImageType() {
 	m.image_type = nil
 }
 
+// SetLocalPath sets the "local_path" field.
+func (m *PrintingImageMutation) SetLocalPath(s string) {
+	m.local_path = &s
+}
+
+// LocalPath returns the value of the "local_path" field in the mutation.
+func (m *PrintingImageMutation) LocalPath() (r string, exists bool) {
+	v := m.local_path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLocalPath returns the old "local_path" field's value of the PrintingImage entity.
+// If the PrintingImage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PrintingImageMutation) OldLocalPath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLocalPath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLocalPath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLocalPath: %w", err)
+	}
+	return oldValue.LocalPath, nil
+}
+
+// ClearLocalPath clears the value of the "local_path" field.
+func (m *PrintingImageMutation) ClearLocalPath() {
+	m.local_path = nil
+	m.clearedFields[printingimage.FieldLocalPath] = struct{}{}
+}
+
+// LocalPathCleared returns if the "local_path" field was cleared in this mutation.
+func (m *PrintingImageMutation) LocalPathCleared() bool {
+	_, ok := m.clearedFields[printingimage.FieldLocalPath]
+	return ok
+}
+
+// ResetLocalPath resets all changes to the "local_path" field.
+func (m *PrintingImageMutation) ResetLocalPath() {
+	m.local_path = nil
+	delete(m.clearedFields, printingimage.FieldLocalPath)
+}
+
 // SetPrintingID sets the "printing" edge to the Printing entity by id.
 func (m *PrintingImageMutation) SetPrintingID(id int) {
 	m.printing = &id
@@ -3013,12 +3063,15 @@ func (m *PrintingImageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PrintingImageMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 3)
 	if m.url != nil {
 		fields = append(fields, printingimage.FieldURL)
 	}
 	if m.image_type != nil {
 		fields = append(fields, printingimage.FieldImageType)
+	}
+	if m.local_path != nil {
+		fields = append(fields, printingimage.FieldLocalPath)
 	}
 	return fields
 }
@@ -3032,6 +3085,8 @@ func (m *PrintingImageMutation) Field(name string) (ent.Value, bool) {
 		return m.URL()
 	case printingimage.FieldImageType:
 		return m.ImageType()
+	case printingimage.FieldLocalPath:
+		return m.LocalPath()
 	}
 	return nil, false
 }
@@ -3045,6 +3100,8 @@ func (m *PrintingImageMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldURL(ctx)
 	case printingimage.FieldImageType:
 		return m.OldImageType(ctx)
+	case printingimage.FieldLocalPath:
+		return m.OldLocalPath(ctx)
 	}
 	return nil, fmt.Errorf("unknown PrintingImage field %s", name)
 }
@@ -3067,6 +3124,13 @@ func (m *PrintingImageMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetImageType(v)
+		return nil
+	case printingimage.FieldLocalPath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLocalPath(v)
 		return nil
 	}
 	return fmt.Errorf("unknown PrintingImage field %s", name)
@@ -3097,7 +3161,11 @@ func (m *PrintingImageMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *PrintingImageMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(printingimage.FieldLocalPath) {
+		fields = append(fields, printingimage.FieldLocalPath)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -3110,6 +3178,11 @@ func (m *PrintingImageMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *PrintingImageMutation) ClearField(name string) error {
+	switch name {
+	case printingimage.FieldLocalPath:
+		m.ClearLocalPath()
+		return nil
+	}
 	return fmt.Errorf("unknown PrintingImage nullable field %s", name)
 }
 
@@ -3122,6 +3195,9 @@ func (m *PrintingImageMutation) ResetField(name string) error {
 		return nil
 	case printingimage.FieldImageType:
 		m.ResetImageType()
+		return nil
+	case printingimage.FieldLocalPath:
+		m.ResetLocalPath()
 		return nil
 	}
 	return fmt.Errorf("unknown PrintingImage field %s", name)

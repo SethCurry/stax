@@ -101,6 +101,7 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "url", Type: field.TypeString},
 		{Name: "image_type", Type: field.TypeEnum, Enums: []string{"small", "normal", "large", "png", "art_crop", "border_crop"}},
+		{Name: "local_path", Type: field.TypeString, Nullable: true},
 		{Name: "printing_image_printing", Type: field.TypeInt, Nullable: true},
 	}
 	// PrintingImagesTable holds the schema information for the "printing_images" table.
@@ -111,7 +112,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "printing_images_printings_printing",
-				Columns:    []*schema.Column{PrintingImagesColumns[3]},
+				Columns:    []*schema.Column{PrintingImagesColumns[4]},
 				RefColumns: []*schema.Column{PrintingsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

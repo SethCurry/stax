@@ -3,6 +3,7 @@ package ql
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/SethCurry/scurry-go/fp"
 	"github.com/SethCurry/stax/internal/bones/card"
@@ -20,7 +21,7 @@ const (
 	opLE operator = "<="
 )
 
-type filterType func(operator, string) (leaf, error)
+type filterField func(operator, string) (leaf, error)
 
 type cardFilter func(string) leaf
 
@@ -36,13 +37,13 @@ type node interface {
 	SetRight(leaf)
 }
 
-type LogicNode struct {
+type logicNode struct {
 	predicator func(...predicate.Card) predicate.Card
 	left       leaf
 	right      leaf
 }
 
-func (l *LogicNode) Predicate() predicate.Card {
+func (l *logicNode) Predicate() predicate.Card {
 	var leftValue predicate.Card
 	var rightValue predicate.Card
 
@@ -57,24 +58,24 @@ func (l *LogicNode) Predicate() predicate.Card {
 	return l.predicator(leftValue, rightValue)
 }
 
-func (l *LogicNode) Left() leaf {
+func (l *logicNode) Left() leaf {
 	return l.left
 }
 
-func (l *LogicNode) Right() leaf {
+func (l *logicNode) Right() leaf {
 	return l.right
 }
 
-func (l *LogicNode) SetLeft(left leaf) {
+func (l *logicNode) SetLeft(left leaf) {
 	l.left = left
 }
 
-func (l *LogicNode) SetRight(right leaf) {
+func (l *logicNode) SetRight(right leaf) {
 	l.right = right
 }
 
-func newAndNode(left, right leaf) *LogicNode {
-	return &LogicNode{
+func newAndNode(left, right leaf) *logicNode {
+	return &logicNode{
 		predicator: func(cards ...predicate.Card) predicate.Card {
 			return card.And(fp.Filter[predicate.Card](func(c predicate.Card) bool {
 				return c != nil
@@ -85,8 +86,8 @@ func newAndNode(left, right leaf) *LogicNode {
 	}
 }
 
-func newOrNode(left, right leaf) *LogicNode {
-	return &LogicNode{
+func newOrNode(left, right leaf) *logicNode {
+	return &logicNode{
 		predicator: func(cards ...predicate.Card) predicate.Card {
 			return card.Or(cards...)
 		},
@@ -101,30 +102,6 @@ type basicLeaf struct {
 
 func (l *basicLeaf) Predicate() predicate.Card {
 	return l.predicator
-}
-
-func cardNameSearch(op operator, name string) (leaf, error) {
-	switch op {
-	case opEQ:
-		return &basicLeaf{
-			predicator: card.NameContainsFold(name),
-		}, nil
-	}
-
-	return nil, fmt.Errorf("invalid operator: %s", op)
-}
-
-var filterTypeLookupTable = map[string]filterType{
-	"name": cardNameSearch,
-}
-
-func getLeaf(filterType string, op operator, value string) (leaf, error) {
-	filterTypeFunc, ok := filterTypeLookupTable[filterType]
-	if !ok {
-		return nil, fmt.Errorf("invalid filter type: %s", filterType)
-	}
-
-	return filterTypeFunc(op, value)
 }
 
 func newTokenReader(tokens []Token) *tokenReader {
@@ -182,7 +159,20 @@ func parseTokens(tokens []Token) (node, error) {
 		case FamilyParen:
 			return nil, errors.New("parentheses are not yet supported")
 		case FamilyKeyword:
-			return nil, errors.New("keywords are not yet supported")
+			keyword := nextToken.Value
+
+			switch strings.ToLower(keyword) {
+			case "and":
+				newPrevious := newAndNode(nil, nil)
+				previous.SetRight(newPrevious)
+				previous = newPrevious
+			case "or":
+				newPrevious := newOrNode(nil, nil)
+				previous.SetRight(newPrevious)
+				previous = newPrevious
+			default:
+				return nil, fmt.Errorf("unrecognized keyword: %s", keyword)
+			}
 		case FamilyLiteral:
 			filterType := nextToken.Value
 

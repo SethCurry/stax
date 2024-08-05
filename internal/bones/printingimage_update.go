@@ -56,6 +56,26 @@ func (piu *PrintingImageUpdate) SetNillableImageType(pt *printingimage.ImageType
 	return piu
 }
 
+// SetLocalPath sets the "local_path" field.
+func (piu *PrintingImageUpdate) SetLocalPath(s string) *PrintingImageUpdate {
+	piu.mutation.SetLocalPath(s)
+	return piu
+}
+
+// SetNillableLocalPath sets the "local_path" field if the given value is not nil.
+func (piu *PrintingImageUpdate) SetNillableLocalPath(s *string) *PrintingImageUpdate {
+	if s != nil {
+		piu.SetLocalPath(*s)
+	}
+	return piu
+}
+
+// ClearLocalPath clears the value of the "local_path" field.
+func (piu *PrintingImageUpdate) ClearLocalPath() *PrintingImageUpdate {
+	piu.mutation.ClearLocalPath()
+	return piu
+}
+
 // SetPrintingID sets the "printing" edge to the Printing entity by ID.
 func (piu *PrintingImageUpdate) SetPrintingID(id int) *PrintingImageUpdate {
 	piu.mutation.SetPrintingID(id)
@@ -146,6 +166,12 @@ func (piu *PrintingImageUpdate) sqlSave(ctx context.Context) (n int, err error) 
 	if value, ok := piu.mutation.ImageType(); ok {
 		_spec.SetField(printingimage.FieldImageType, field.TypeEnum, value)
 	}
+	if value, ok := piu.mutation.LocalPath(); ok {
+		_spec.SetField(printingimage.FieldLocalPath, field.TypeString, value)
+	}
+	if piu.mutation.LocalPathCleared() {
+		_spec.ClearField(printingimage.FieldLocalPath, field.TypeString)
+	}
 	if piu.mutation.PrintingCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -220,6 +246,26 @@ func (piuo *PrintingImageUpdateOne) SetNillableImageType(pt *printingimage.Image
 	if pt != nil {
 		piuo.SetImageType(*pt)
 	}
+	return piuo
+}
+
+// SetLocalPath sets the "local_path" field.
+func (piuo *PrintingImageUpdateOne) SetLocalPath(s string) *PrintingImageUpdateOne {
+	piuo.mutation.SetLocalPath(s)
+	return piuo
+}
+
+// SetNillableLocalPath sets the "local_path" field if the given value is not nil.
+func (piuo *PrintingImageUpdateOne) SetNillableLocalPath(s *string) *PrintingImageUpdateOne {
+	if s != nil {
+		piuo.SetLocalPath(*s)
+	}
+	return piuo
+}
+
+// ClearLocalPath clears the value of the "local_path" field.
+func (piuo *PrintingImageUpdateOne) ClearLocalPath() *PrintingImageUpdateOne {
+	piuo.mutation.ClearLocalPath()
 	return piuo
 }
 
@@ -342,6 +388,12 @@ func (piuo *PrintingImageUpdateOne) sqlSave(ctx context.Context) (_node *Printin
 	}
 	if value, ok := piuo.mutation.ImageType(); ok {
 		_spec.SetField(printingimage.FieldImageType, field.TypeEnum, value)
+	}
+	if value, ok := piuo.mutation.LocalPath(); ok {
+		_spec.SetField(printingimage.FieldLocalPath, field.TypeString, value)
+	}
+	if piuo.mutation.LocalPathCleared() {
+		_spec.ClearField(printingimage.FieldLocalPath, field.TypeString)
 	}
 	if piuo.mutation.PrintingCleared() {
 		edge := &sqlgraph.EdgeSpec{
