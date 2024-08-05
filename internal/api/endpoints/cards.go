@@ -8,6 +8,7 @@ import (
 	"github.com/SethCurry/stax/internal/api/responses"
 	"github.com/SethCurry/stax/internal/api/squid"
 	"github.com/SethCurry/stax/internal/bones/card"
+	"github.com/SethCurry/stax/internal/ql"
 )
 
 // CardByName searched for a single card via its name.  It should
@@ -56,6 +57,32 @@ func CardSearch(ctx *squid.Context) error {
 	cards := responses.CardsFromDB(results)
 
 	return ctx.Response.WriteJSON(200, responses.CardSearch{
+		Cards: cards,
+	})
+}
+
+func CardQuery(ctx *squid.Context) error {
+	var params requests.CardQuery
+
+	if err := ctx.Request.UnmarshalQuery(&params); err != nil {
+		return err
+	}
+
+	parsedQueryRoot, err := ql.ParseQuery(params.Query)
+	if err != nil {
+		return err
+	}
+
+	pred := parsedQueryRoot.Predicate()
+
+	gotCards, err := ctx.DB.Card.Query().Where(pred).WithFaces().All(ctx.Request.Context())
+	if err != nil {
+		return fmt.Errorf("failed to query for cards: %w", err)
+	}
+
+	cards := responses.CardsFromDB(gotCards)
+
+	return ctx.Response.WriteJSON(200, responses.CardQuery{
 		Cards: cards,
 	})
 }

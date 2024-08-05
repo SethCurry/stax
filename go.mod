@@ -1,9 +1,10 @@
 module github.com/SethCurry/stax
 
-go 1.21.7
+go 1.22.5
 
 require (
 	entgo.io/ent v0.13.1
+	github.com/SethCurry/scurry-go v0.0.1
 	github.com/alecthomas/kong v0.9.0
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/gorilla/schema v1.3.0

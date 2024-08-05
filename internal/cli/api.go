@@ -19,6 +19,7 @@ func (a *APICmd) Run(ctx *Context) error {
 
 	srv := squid.NewServer(dbConn, ctx.Logger)
 
+	srv.Get("/cards/query", endpoints.CardQuery)
 	srv.Get("/cards/named", endpoints.CardByName)
 	srv.Get("/cards", endpoints.CardSearch)
 

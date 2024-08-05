@@ -59,15 +59,15 @@ func (s *Server) wrapHandler(handler HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		err = ctx.DB.Commit()
-		if err != nil {
-			ctx.Logger.Error("failed to commit transaction after running", zap.Error(err))
-		}
-
 		err = handler(ctx)
 		if err != nil {
 			ctx.Logger.Error("function returned error", zap.Error(err))
 			s.errorResponse(resp, err)
+		}
+
+		err = ctx.DB.Commit()
+		if err != nil {
+			ctx.Logger.Error("failed to commit transaction after running", zap.Error(err))
 		}
 	}
 }

@@ -29,6 +29,10 @@ type CardSearch struct {
 	Cards []Card `json:"cards"`
 }
 
+type CardQuery struct {
+	Cards []Card `json:"cards"`
+}
+
 // CardFromDB converts a single Card to a Card response object.
 func CardFromDB(crd *bones.Card) Card {
 	return Card{
