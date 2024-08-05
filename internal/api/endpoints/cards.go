@@ -7,7 +7,6 @@ import (
 	"github.com/SethCurry/stax/internal/api/requests"
 	"github.com/SethCurry/stax/internal/api/responses"
 	"github.com/SethCurry/stax/internal/api/squid"
-	"github.com/SethCurry/stax/internal/bones/card"
 	"github.com/SethCurry/stax/internal/ql"
 )
 
@@ -34,34 +33,7 @@ func CardByName(ctx *squid.Context) error {
 	return ctx.Response.WriteJSON(200, resp)
 }
 
-// CardSearch searches for cards based on the provided query.  It returns
-// a list of those cards.
 func CardSearch(ctx *squid.Context) error {
-	var params requests.CardSearch
-
-	if err := ctx.Request.UnmarshalQuery(&params); err != nil {
-		return err
-	}
-
-	query := ctx.DB.Card.Query()
-
-	if params.Name != "" {
-		query = query.Where(card.NameContainsFold(params.Name))
-	}
-
-	results, err := query.WithFaces().All(ctx.Request.Context())
-	if err != nil {
-		return fmt.Errorf("failed to query for cards: %w", err)
-	}
-
-	cards := responses.CardsFromDB(results)
-
-	return ctx.Response.WriteJSON(200, responses.CardSearch{
-		Cards: cards,
-	})
-}
-
-func CardQuery(ctx *squid.Context) error {
 	var params requests.CardQuery
 
 	if err := ctx.Request.UnmarshalQuery(&params); err != nil {
@@ -82,7 +54,7 @@ func CardQuery(ctx *squid.Context) error {
 
 	cards := responses.CardsFromDB(gotCards)
 
-	return ctx.Response.WriteJSON(200, responses.CardQuery{
+	return ctx.Response.WriteJSON(200, responses.CardSearch{
 		Cards: cards,
 	})
 }
