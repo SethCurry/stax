@@ -54,6 +54,7 @@ type Client struct {
 	Rulings  *RulingClient
 }
 
+// APIError is a representation of the error format returned by the Scryfall API.
 type APIError struct {
 	// The HTTP status code of the response
 	Status int `json:"status"`

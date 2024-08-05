@@ -9,37 +9,37 @@ import (
 	"github.com/SethCurry/stax/internal/bones/predicate"
 )
 
-type Operator string
+type operator string
 
 const (
-	EQ Operator = "="
-	NE Operator = "!="
-	GT Operator = ">"
-	GE Operator = ">="
-	LT Operator = "<"
-	LE Operator = "<="
+	opEQ operator = "="
+	opNE operator = "!="
+	opGT operator = ">"
+	opGE operator = ">="
+	opLT operator = "<"
+	opLE operator = "<="
 )
 
-type filterType func(Operator, string) (Leaf, error)
+type filterType func(operator, string) (leaf, error)
 
-type cardFilter func(string) Leaf
+type cardFilter func(string) leaf
 
-type Leaf interface {
+type leaf interface {
 	Predicate() predicate.Card
 }
 
-type Node interface {
-	Leaf
-	Left() Leaf
-	Right() Leaf
-	SetLeft(Leaf)
-	SetRight(Leaf)
+type node interface {
+	leaf
+	Left() leaf
+	Right() leaf
+	SetLeft(leaf)
+	SetRight(leaf)
 }
 
 type LogicNode struct {
 	predicator func(...predicate.Card) predicate.Card
-	left       Leaf
-	right      Leaf
+	left       leaf
+	right      leaf
 }
 
 func (l *LogicNode) Predicate() predicate.Card {
@@ -57,23 +57,23 @@ func (l *LogicNode) Predicate() predicate.Card {
 	return l.predicator(leftValue, rightValue)
 }
 
-func (l *LogicNode) Left() Leaf {
+func (l *LogicNode) Left() leaf {
 	return l.left
 }
 
-func (l *LogicNode) Right() Leaf {
+func (l *LogicNode) Right() leaf {
 	return l.right
 }
 
-func (l *LogicNode) SetLeft(left Leaf) {
+func (l *LogicNode) SetLeft(left leaf) {
 	l.left = left
 }
 
-func (l *LogicNode) SetRight(right Leaf) {
+func (l *LogicNode) SetRight(right leaf) {
 	l.right = right
 }
 
-func newAndNode(left, right Leaf) *LogicNode {
+func newAndNode(left, right leaf) *LogicNode {
 	return &LogicNode{
 		predicator: func(cards ...predicate.Card) predicate.Card {
 			return card.And(fp.Filter[predicate.Card](func(c predicate.Card) bool {
@@ -85,7 +85,7 @@ func newAndNode(left, right Leaf) *LogicNode {
 	}
 }
 
-func newOrNode(left, right Leaf) *LogicNode {
+func newOrNode(left, right leaf) *LogicNode {
 	return &LogicNode{
 		predicator: func(cards ...predicate.Card) predicate.Card {
 			return card.Or(cards...)
@@ -103,9 +103,9 @@ func (l *basicLeaf) Predicate() predicate.Card {
 	return l.predicator
 }
 
-func cardNameSearch(op Operator, name string) (Leaf, error) {
+func cardNameSearch(op operator, name string) (leaf, error) {
 	switch op {
-	case EQ:
+	case opEQ:
 		return &basicLeaf{
 			predicator: card.NameContainsFold(name),
 		}, nil
@@ -118,7 +118,7 @@ var filterTypeLookupTable = map[string]filterType{
 	"name": cardNameSearch,
 }
 
-func getLeaf(filterType string, op Operator, value string) (Leaf, error) {
+func getLeaf(filterType string, op operator, value string) (leaf, error) {
 	filterTypeFunc, ok := filterTypeLookupTable[filterType]
 	if !ok {
 		return nil, fmt.Errorf("invalid filter type: %s", filterType)
@@ -164,11 +164,11 @@ func (r *tokenReader) hasMore() bool {
 	return r.index < len(r.tokens)
 }
 
-func parseTokens(tokens []Token) (Node, error) {
+func parseTokens(tokens []Token) (node, error) {
 	reader := newTokenReader(tokens)
 
-	var root Node
-	var previous Node
+	var root node
+	var previous node
 
 	for reader.hasMore() {
 		nextToken, ok := reader.next()
@@ -196,7 +196,7 @@ func parseTokens(tokens []Token) (Node, error) {
 				return nil, errors.New("expected value after operator")
 			}
 
-			leafNode, err := getLeaf(filterType, Operator(opToken.Value), valueToken.Value)
+			leafNode, err := getLeaf(filterType, operator(opToken.Value), valueToken.Value)
 			if err != nil {
 				return nil, fmt.Errorf("failed to build leaf node: %w", err)
 			}
@@ -216,8 +216,8 @@ func parseTokens(tokens []Token) (Node, error) {
 	return root, nil
 }
 
-func ParseQuery(query string) (Node, error) {
-	tokens, err := Lex(query)
+func ParseQuery(query string) (node, error) {
+	tokens, err := lexString(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to lex query: %w", err)
 	}

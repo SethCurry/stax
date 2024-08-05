@@ -7,16 +7,16 @@ import (
 	"github.com/SethCurry/scurry-go/fp"
 )
 
-type Keyword string
+type keyword string
 
 const (
-	KeywordOr  = "OR"
-	KeywordAnd = "AND"
+	keywordOr  = "OR"
+	keywordAnd = "AND"
 )
 
-var Keywords = []Keyword{
-	KeywordOr,
-	KeywordAnd,
+var keywords = []keyword{
+	keywordOr,
+	keywordAnd,
 }
 
 type TokenFamily string
@@ -34,7 +34,7 @@ type Token struct {
 }
 
 func isKeyword(item string) bool {
-	for _, v := range Keywords {
+	for _, v := range keywords {
 		if strings.ToUpper(item) == string(v) {
 			return true
 		}
@@ -200,7 +200,7 @@ func lex(t *lexReader) ([]Token, error) {
 	}
 }
 
-func Lex(input string) ([]Token, error) {
+func lexString(input string) ([]Token, error) {
 	proc := &lexReader{
 		query: []rune(input),
 	}
