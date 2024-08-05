@@ -23,8 +23,6 @@ const (
 
 type filterField func(operator, string) (leaf, error)
 
-type cardFilter func(string) leaf
-
 type leaf interface {
 	Predicate() predicate.Card
 }
@@ -127,14 +125,6 @@ func (r *tokenReader) next() (*Token, bool) {
 	r.index++
 
 	return &ret, true
-}
-
-func (r *tokenReader) peek() (*Token, bool) {
-	if !r.hasMore() {
-		return nil, false
-	}
-
-	return &r.tokens[r.index], true
 }
 
 func (r *tokenReader) hasMore() bool {
