@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/SethCurry/stax/internal/common"
+	"github.com/SethCurry/scurry-go/fp"
 )
 
 type Keyword string
@@ -44,14 +44,14 @@ func isKeyword(item string) bool {
 }
 
 func tokenLiteralsToKeywords(tokens []Token) []Token {
-	return common.Map(tokens, func(t Token) Token {
+	return fp.Map(func(t Token) Token {
 		if isKeyword(t.Value) {
 			t.Value = strings.ToUpper(t.Value)
 			t.Family = FamilyKeyword
 		}
 
 		return t
-	})
+	}, tokens)
 }
 
 type lexReader struct {

@@ -29,7 +29,7 @@ func (r *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	numAttempts := 0
 	lastSleep := time.Second
 
-	for numAttempts < r.maxRetries {
+	for numAttempts <= r.maxRetries {
 		numAttempts++
 
 		ok := r.limiter.AddEvent()

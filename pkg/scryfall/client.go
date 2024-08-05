@@ -11,7 +11,7 @@ import (
 // NewClient creates a new Client.
 func NewClient(startingClient *http.Client) *Client {
 	defaultMaxRetries := 5
-	defaultMaxRequests := 5
+	defaultMaxRequests := 10
 	defaultWindow := time.Second
 	defaultTimeoutSeconds := 30
 

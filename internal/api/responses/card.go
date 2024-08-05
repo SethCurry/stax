@@ -1,8 +1,8 @@
 package responses
 
 import (
+	"github.com/SethCurry/scurry-go/fp"
 	"github.com/SethCurry/stax/internal/bones"
-	"github.com/SethCurry/stax/internal/common"
 )
 
 type Card struct {
@@ -38,7 +38,7 @@ func CardFromDB(crd *bones.Card) Card {
 	return Card{
 		Name:     crd.Name,
 		OracleID: crd.OracleID,
-		Faces: common.Map(crd.Edges.Faces, func(f *bones.CardFace) CardFace {
+		Faces: fp.Map(func(f *bones.CardFace) CardFace {
 			return CardFace{
 				Name:       f.Name,
 				OracleText: f.OracleText,
@@ -52,11 +52,11 @@ func CardFromDB(crd *bones.Card) Card {
 				TypeLine:   f.TypeLine,
 				Colors:     f.Colors,
 			}
-		}),
+		}, crd.Edges.Faces),
 	}
 }
 
 // CardsFromDB converts a slice of database cards to Card response objects.
 func CardsFromDB(crds []*bones.Card) []Card {
-	return common.Map(crds, CardFromDB)
+	return fp.Map(CardFromDB, crds)
 }
