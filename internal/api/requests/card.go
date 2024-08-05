@@ -39,3 +39,7 @@ func (c CardByName) ToPredicate() predicate.Card {
 type CardSearch struct {
 	Name string `schema:"name"`
 }
+
+type CardQuery struct {
+	Query string `schema:"query"`
+}
