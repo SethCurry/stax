@@ -88,17 +88,14 @@ func doRequest(client *http.Client, req *http.Request, into interface{}) error {
 
 	decoder := json.NewDecoder(resp.Body)
 
-	if resp.StatusCode >= 400 {
+	// If the response is an error, decode it as an error and return it.
+	if resp.StatusCode != http.StatusOK {
 		var apiErr APIError
 		if err := decoder.Decode(&apiErr); err != nil {
 			return fmt.Errorf("failed to decode respone: %w", err)
 		}
 
 		return &apiErr
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	if err := decoder.Decode(into); err != nil {

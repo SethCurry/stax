@@ -50,6 +50,7 @@ func (t *ScryfallCardTable) Write(card *scryfall.Card) error {
 
 	newLineAfter := false
 
+	// if the card has more than one name, i.e. double-sided or split cards
 	if len(nameSplit) > 1 {
 		newLineAfter = true
 

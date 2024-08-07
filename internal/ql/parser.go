@@ -131,7 +131,9 @@ func (r *tokenReader) hasMore() bool {
 	return r.index < len(r.tokens)
 }
 
-func parseTokens(tokens []Token) (node, error) {
+// ParseTokens parses a slice of tokens and returns a node that can be converted to a bones predicate.
+// This is useful if you want to separate the lexing and parsing phases.
+func ParseTokens(tokens []Token) (node, error) {
 	reader := newTokenReader(tokens)
 
 	var root node
@@ -196,11 +198,13 @@ func parseTokens(tokens []Token) (node, error) {
 	return root, nil
 }
 
+// ParseQuery parses a query string and returns a node that can be converted to a bones predicate.
+// This is the main entry point for the ql package.
 func ParseQuery(query string) (node, error) {
-	tokens, err := lexString(query)
+	tokens, err := LexString(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to lex query: %w", err)
 	}
 
-	return parseTokens(tokens)
+	return ParseTokens(tokens)
 }
