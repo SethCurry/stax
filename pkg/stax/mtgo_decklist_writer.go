@@ -15,6 +15,7 @@ type MTGODecklistWriter struct {
 	writer io.Writer
 }
 
-func (m *MTGODecklistWriter) AddCard(name string, count int) {
-	m.writer.Write([]byte(fmt.Sprintf("%d %s\n", count, name)))
+func (m *MTGODecklistWriter) AddCard(name string, count int) error {
+	_, err := m.writer.Write([]byte(fmt.Sprintf("%d %s\n", count, name)))
+	return err
 }

@@ -58,6 +58,11 @@ func URL(v string) predicate.PrintingImage {
 	return predicate.PrintingImage(sql.FieldEQ(FieldURL, v))
 }
 
+// LocalPath applies equality check predicate on the "local_path" field. It's identical to LocalPathEQ.
+func LocalPath(v string) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldEQ(FieldLocalPath, v))
+}
+
 // URLEQ applies the EQ predicate on the "url" field.
 func URLEQ(v string) predicate.PrintingImage {
 	return predicate.PrintingImage(sql.FieldEQ(FieldURL, v))
@@ -141,6 +146,81 @@ func ImageTypeIn(vs ...ImageType) predicate.PrintingImage {
 // ImageTypeNotIn applies the NotIn predicate on the "image_type" field.
 func ImageTypeNotIn(vs ...ImageType) predicate.PrintingImage {
 	return predicate.PrintingImage(sql.FieldNotIn(FieldImageType, vs...))
+}
+
+// LocalPathEQ applies the EQ predicate on the "local_path" field.
+func LocalPathEQ(v string) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldEQ(FieldLocalPath, v))
+}
+
+// LocalPathNEQ applies the NEQ predicate on the "local_path" field.
+func LocalPathNEQ(v string) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldNEQ(FieldLocalPath, v))
+}
+
+// LocalPathIn applies the In predicate on the "local_path" field.
+func LocalPathIn(vs ...string) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldIn(FieldLocalPath, vs...))
+}
+
+// LocalPathNotIn applies the NotIn predicate on the "local_path" field.
+func LocalPathNotIn(vs ...string) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldNotIn(FieldLocalPath, vs...))
+}
+
+// LocalPathGT applies the GT predicate on the "local_path" field.
+func LocalPathGT(v string) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldGT(FieldLocalPath, v))
+}
+
+// LocalPathGTE applies the GTE predicate on the "local_path" field.
+func LocalPathGTE(v string) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldGTE(FieldLocalPath, v))
+}
+
+// LocalPathLT applies the LT predicate on the "local_path" field.
+func LocalPathLT(v string) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldLT(FieldLocalPath, v))
+}
+
+// LocalPathLTE applies the LTE predicate on the "local_path" field.
+func LocalPathLTE(v string) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldLTE(FieldLocalPath, v))
+}
+
+// LocalPathContains applies the Contains predicate on the "local_path" field.
+func LocalPathContains(v string) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldContains(FieldLocalPath, v))
+}
+
+// LocalPathHasPrefix applies the HasPrefix predicate on the "local_path" field.
+func LocalPathHasPrefix(v string) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldHasPrefix(FieldLocalPath, v))
+}
+
+// LocalPathHasSuffix applies the HasSuffix predicate on the "local_path" field.
+func LocalPathHasSuffix(v string) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldHasSuffix(FieldLocalPath, v))
+}
+
+// LocalPathIsNil applies the IsNil predicate on the "local_path" field.
+func LocalPathIsNil() predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldIsNull(FieldLocalPath))
+}
+
+// LocalPathNotNil applies the NotNil predicate on the "local_path" field.
+func LocalPathNotNil() predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldNotNull(FieldLocalPath))
+}
+
+// LocalPathEqualFold applies the EqualFold predicate on the "local_path" field.
+func LocalPathEqualFold(v string) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldEqualFold(FieldLocalPath, v))
+}
+
+// LocalPathContainsFold applies the ContainsFold predicate on the "local_path" field.
+func LocalPathContainsFold(v string) predicate.PrintingImage {
+	return predicate.PrintingImage(sql.FieldContainsFold(FieldLocalPath, v))
 }
 
 // HasPrinting applies the HasEdge predicate on the "printing" edge.

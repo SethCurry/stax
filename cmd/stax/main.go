@@ -3,22 +3,39 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/SethCurry/stax/internal/cli"
 	"github.com/alecthomas/kong"
+	"github.com/mitchellh/go-homedir"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 func main() {
+	userHome, err := homedir.Dir()
+	if err != nil {
+		fmt.Println("Failed to get your home directory.")
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
 	var root cli.Root
 
-	ctx := kong.Parse(&root)
+	configPaths := []string{
+		filepath.Join(userHome, ".stax", "config.json"),
+	}
+
+	ctx := kong.Parse(&root,
+		kong.Name("stax"),
+		kong.Description("A swiss army knife CLI for Magic: The Gathering"),
+		kong.Configuration(kong.JSON, configPaths...))
 
 	var logLevel zapcore.Level
 	levelRef := &logLevel
 
-	err := levelRef.UnmarshalText([]byte(root.LogLevel))
+	err = levelRef.UnmarshalText([]byte(root.Verbosity))
 	if err != nil {
 		ctx.FatalIfErrorf(err)
 	}

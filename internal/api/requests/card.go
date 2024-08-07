@@ -41,5 +41,5 @@ type CardSearch struct {
 }
 
 type CardQuery struct {
-	Query string `schema:"query"`
+	Query string `schema:"q"`
 }

@@ -87,7 +87,7 @@ func TestLex(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := Lex(tc.query)
+			got, err := LexString(tc.query)
 
 			require.NoError(t, err)
 

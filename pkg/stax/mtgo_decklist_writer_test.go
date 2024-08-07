@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMTGODecklistWriter(t *testing.T) {
@@ -44,7 +45,8 @@ func TestMTGODecklistWriter(t *testing.T) {
 			writer := NewMTGODecklistWriter(buf)
 
 			for _, v := range tc.cards {
-				writer.AddCard(v.Name, v.Count)
+				err := writer.AddCard(v.Name, v.Count)
+				require.NoError(t, err)
 			}
 
 			assert.Equal(t, tc.expected, buf.String())

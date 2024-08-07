@@ -4,19 +4,19 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/SethCurry/stax/internal/common"
+	"github.com/SethCurry/scurry-go/fp"
 )
 
-type Keyword string
+type keyword string
 
 const (
-	KeywordOr  = "OR"
-	KeywordAnd = "AND"
+	keywordOr  = "OR"
+	keywordAnd = "AND"
 )
 
-var Keywords = []Keyword{
-	KeywordOr,
-	KeywordAnd,
+var keywords = []keyword{
+	keywordOr,
+	keywordAnd,
 }
 
 type TokenFamily string
@@ -34,7 +34,7 @@ type Token struct {
 }
 
 func isKeyword(item string) bool {
-	for _, v := range Keywords {
+	for _, v := range keywords {
 		if strings.ToUpper(item) == string(v) {
 			return true
 		}
@@ -44,76 +44,18 @@ func isKeyword(item string) bool {
 }
 
 func tokenLiteralsToKeywords(tokens []Token) []Token {
-	return common.Map(tokens, func(t Token) Token {
+	return fp.Map(func(t Token) Token {
 		if isKeyword(t.Value) {
 			t.Value = strings.ToUpper(t.Value)
 			t.Family = FamilyKeyword
 		}
 
 		return t
-	})
-}
-
-type lexReader struct {
-	index int
-	query []rune
-}
-
-func (l *lexReader) next() (rune, bool) {
-	if l.index >= len(l.query) {
-		return ' ', false
-	}
-
-	char := l.query[l.index]
-
-	l.index++
-
-	return char, true
-}
-
-func (l *lexReader) peek() (rune, bool) {
-	if l.index >= len(l.query) {
-		return ' ', false
-	}
-
-	return l.query[l.index], true
-}
-
-func (l *lexReader) readUntilOneOf(matches []rune) (string, bool) {
-	acc := ""
-
-	for {
-		nextChar, ok := l.peek()
-		if !ok {
-			return acc, false
-		}
-
-		for _, m := range matches {
-			if nextChar == m {
-				return acc, true
-			}
-		}
-		l.next()
-		acc += string(nextChar)
-	}
-}
-
-func (l *lexReader) readUntilSeparator() (string, bool) {
-	separators := []rune{
-		' ',
-		'"',
-		'=',
-		'>',
-		'<',
-		'(',
-		')',
-		':',
-	}
-
-	return l.readUntilOneOf(separators)
+	}, tokens)
 }
 
 func lex(t *lexReader) ([]Token, error) {
+	// TODO attach line/column info to tokens so it can be propagated in errors
 	var ret []Token
 
 	for {
@@ -126,38 +68,30 @@ func lex(t *lexReader) ([]Token, error) {
 
 		if nextItem != " " && nextItem != "" {
 			switch nextItem {
-			case ">":
+			case ">", "<":
+				// if the next token is an =, then it's a combined operator
 				if next, ok := t.peek(); ok && next == '=' {
 					ret = append(ret, Token{
 						Family: FamilyOperator,
-						Value:  ">=",
+						Value:  nextItem + "=",
 					})
 					_, done = t.next()
 				} else {
 					ret = append(ret, Token{
 						Family: FamilyOperator,
-						Value:  ">",
-					})
-				}
-			case "<":
-				if next, ok := t.peek(); ok && next == '=' {
-					ret = append(ret, Token{
-						Family: FamilyOperator,
-						Value:  "<=",
-					})
-					_, done = t.next()
-				} else {
-					ret = append(ret, Token{
-						Family: FamilyOperator,
-						Value:  "<",
+						Value:  nextItem,
 					})
 				}
 			case "=", ":":
+				// Same thing as < and >, if the next token is a > or <, then it's a combined operator
+				// This makes users able to use them in either order, i.e. >= or =>
 				if next, ok := t.peek(); ok && (next == '>' || next == '<') {
 					ret = append(ret, Token{
 						Family: FamilyOperator,
 						Value:  string(next) + "=",
 					})
+
+					// consume the next character, since it's part of the operator
 					_, done = t.next()
 				} else {
 					ret = append(ret, Token{
@@ -165,15 +99,10 @@ func lex(t *lexReader) ([]Token, error) {
 						Value:  "=",
 					})
 				}
-			case "(":
+			case "(", ")":
 				ret = append(ret, Token{
 					Family: FamilyParen,
-					Value:  "(",
-				})
-			case ")":
-				ret = append(ret, Token{
-					Family: FamilyParen,
-					Value:  ")",
+					Value:  nextItem,
 				})
 			case "\"":
 				quoted, ok := t.readUntilOneOf([]rune{'"'})
@@ -200,7 +129,7 @@ func lex(t *lexReader) ([]Token, error) {
 	}
 }
 
-func Lex(input string) ([]Token, error) {
+func LexString(input string) ([]Token, error) {
 	proc := &lexReader{
 		query: []rune(input),
 	}

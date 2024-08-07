@@ -3,46 +3,45 @@ package ql
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/SethCurry/scurry-go/fp"
 	"github.com/SethCurry/stax/internal/bones/card"
 	"github.com/SethCurry/stax/internal/bones/predicate"
 )
 
-type Operator string
+type operator string
 
 const (
-	EQ Operator = "="
-	NE Operator = "!="
-	GT Operator = ">"
-	GE Operator = ">="
-	LT Operator = "<"
-	LE Operator = "<="
+	opEQ operator = "="
+	opNE operator = "!="
+	opGT operator = ">"
+	opGE operator = ">="
+	opLT operator = "<"
+	opLE operator = "<="
 )
 
-type filterType func(Operator, string) (Leaf, error)
+type filterField func(operator, string) (leaf, error)
 
-type cardFilter func(string) Leaf
-
-type Leaf interface {
+type leaf interface {
 	Predicate() predicate.Card
 }
 
-type Node interface {
-	Leaf
-	Left() Leaf
-	Right() Leaf
-	SetLeft(Leaf)
-	SetRight(Leaf)
+type node interface {
+	leaf
+	Left() leaf
+	Right() leaf
+	SetLeft(leaf)
+	SetRight(leaf)
 }
 
-type LogicNode struct {
+type logicNode struct {
 	predicator func(...predicate.Card) predicate.Card
-	left       Leaf
-	right      Leaf
+	left       leaf
+	right      leaf
 }
 
-func (l *LogicNode) Predicate() predicate.Card {
+func (l *logicNode) Predicate() predicate.Card {
 	var leftValue predicate.Card
 	var rightValue predicate.Card
 
@@ -57,24 +56,24 @@ func (l *LogicNode) Predicate() predicate.Card {
 	return l.predicator(leftValue, rightValue)
 }
 
-func (l *LogicNode) Left() Leaf {
+func (l *logicNode) Left() leaf {
 	return l.left
 }
 
-func (l *LogicNode) Right() Leaf {
+func (l *logicNode) Right() leaf {
 	return l.right
 }
 
-func (l *LogicNode) SetLeft(left Leaf) {
+func (l *logicNode) SetLeft(left leaf) {
 	l.left = left
 }
 
-func (l *LogicNode) SetRight(right Leaf) {
+func (l *logicNode) SetRight(right leaf) {
 	l.right = right
 }
 
-func newAndNode(left, right Leaf) *LogicNode {
-	return &LogicNode{
+func newAndNode(left, right leaf) *logicNode {
+	return &logicNode{
 		predicator: func(cards ...predicate.Card) predicate.Card {
 			return card.And(fp.Filter[predicate.Card](func(c predicate.Card) bool {
 				return c != nil
@@ -85,8 +84,8 @@ func newAndNode(left, right Leaf) *LogicNode {
 	}
 }
 
-func newOrNode(left, right Leaf) *LogicNode {
-	return &LogicNode{
+func newOrNode(left, right leaf) *logicNode {
+	return &logicNode{
 		predicator: func(cards ...predicate.Card) predicate.Card {
 			return card.Or(cards...)
 		},
@@ -101,30 +100,6 @@ type basicLeaf struct {
 
 func (l *basicLeaf) Predicate() predicate.Card {
 	return l.predicator
-}
-
-func cardNameSearch(op Operator, name string) (Leaf, error) {
-	switch op {
-	case EQ:
-		return &basicLeaf{
-			predicator: card.NameContainsFold(name),
-		}, nil
-	}
-
-	return nil, fmt.Errorf("invalid operator: %s", op)
-}
-
-var filterTypeLookupTable = map[string]filterType{
-	"name": cardNameSearch,
-}
-
-func getLeaf(filterType string, op Operator, value string) (Leaf, error) {
-	filterTypeFunc, ok := filterTypeLookupTable[filterType]
-	if !ok {
-		return nil, fmt.Errorf("invalid filter type: %s", filterType)
-	}
-
-	return filterTypeFunc(op, value)
 }
 
 func newTokenReader(tokens []Token) *tokenReader {
@@ -152,23 +127,17 @@ func (r *tokenReader) next() (*Token, bool) {
 	return &ret, true
 }
 
-func (r *tokenReader) peek() (*Token, bool) {
-	if !r.hasMore() {
-		return nil, false
-	}
-
-	return &r.tokens[r.index], true
-}
-
 func (r *tokenReader) hasMore() bool {
 	return r.index < len(r.tokens)
 }
 
-func parseTokens(tokens []Token) (Node, error) {
+// ParseTokens parses a slice of tokens and returns a node that can be converted to a bones predicate.
+// This is useful if you want to separate the lexing and parsing phases.
+func ParseTokens(tokens []Token) (node, error) {
 	reader := newTokenReader(tokens)
 
-	var root Node
-	var previous Node
+	var root node
+	var previous node
 
 	for reader.hasMore() {
 		nextToken, ok := reader.next()
@@ -182,7 +151,20 @@ func parseTokens(tokens []Token) (Node, error) {
 		case FamilyParen:
 			return nil, errors.New("parentheses are not yet supported")
 		case FamilyKeyword:
-			return nil, errors.New("keywords are not yet supported")
+			keyword := nextToken.Value
+
+			switch strings.ToLower(keyword) {
+			case "and":
+				newPrevious := newAndNode(nil, nil)
+				previous.SetRight(newPrevious)
+				previous = newPrevious
+			case "or":
+				newPrevious := newOrNode(nil, nil)
+				previous.SetRight(newPrevious)
+				previous = newPrevious
+			default:
+				return nil, fmt.Errorf("unrecognized keyword: %s", keyword)
+			}
 		case FamilyLiteral:
 			filterType := nextToken.Value
 
@@ -196,7 +178,7 @@ func parseTokens(tokens []Token) (Node, error) {
 				return nil, errors.New("expected value after operator")
 			}
 
-			leafNode, err := getLeaf(filterType, Operator(opToken.Value), valueToken.Value)
+			leafNode, err := getLeaf(filterType, operator(opToken.Value), valueToken.Value)
 			if err != nil {
 				return nil, fmt.Errorf("failed to build leaf node: %w", err)
 			}
@@ -216,11 +198,13 @@ func parseTokens(tokens []Token) (Node, error) {
 	return root, nil
 }
 
-func ParseQuery(query string) (Node, error) {
-	tokens, err := Lex(query)
+// ParseQuery parses a query string and returns a node that can be converted to a bones predicate.
+// This is the main entry point for the ql package.
+func ParseQuery(query string) (node, error) {
+	tokens, err := LexString(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to lex query: %w", err)
 	}
 
-	return parseTokens(tokens)
+	return ParseTokens(tokens)
 }

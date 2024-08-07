@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -51,7 +52,12 @@ func (m *MoxfieldExportUserCmd) Run(ctx *Context) error {
 		writer := stax.NewMTGODecklistWriter(fd)
 
 		for _, l := range lines {
-			writer.AddCard(l.Name, l.Quantity)
+			err = writer.AddCard(l.Name, l.Quantity)
+			if err != nil {
+				logger.Error("failed to add card to decklist", zap.Error(err))
+
+				return fmt.Errorf("failed to add card to decklist: %w", err)
+			}
 		}
 	}
 

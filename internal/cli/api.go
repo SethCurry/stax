@@ -9,7 +9,9 @@ import (
 	"go.uber.org/zap"
 )
 
-type APICmd struct{}
+type APICmd struct {
+	Listen string `optional:"" aliases:"l" name:"listen" default:"0.0.0.0:8765" help:"The address to listen on."`
+}
 
 func (a *APICmd) Run(ctx *Context) error {
 	dbConn, err := connectToDatabase(context.Background(), ctx.Logger, false)
@@ -22,7 +24,7 @@ func (a *APICmd) Run(ctx *Context) error {
 	srv.Get("/cards/named", endpoints.CardByName)
 	srv.Get("/cards", endpoints.CardSearch)
 
-	err = srv.Serve(":8765")
+	err = srv.Serve(a.Listen)
 	if err != nil {
 		ctx.Logger.Error("failed to serve HTTP", zap.Error(err))
 	}
