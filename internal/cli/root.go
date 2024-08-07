@@ -27,5 +27,5 @@ type Root struct {
 
 	// The log level to use.
 	// This needs to be unmarshaled into a zapcore.Level.
-	LogLevel string `name:"log-level" help:"The level to log at." default:"error" enum:"debug,info,warn,error"`
+	Verbosity string `optional:"" name:"verbosity" aliases:"v" help:"The level to log at." default:"error" enum:"debug,info,warn,error"`
 }

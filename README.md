@@ -22,7 +22,16 @@ The best resource for learning how to write these queries is the [Scryfall Searc
 
 ```bash
 # Find all cards that have the type creature and a CMC less than 5
-stax scryfall card search "cmc<5 AND type:creature"
+# You don't have to use quotes, but your shell may interpret symbols like < and >
+# as IO redirection.
+stax scryfall search "cmc<5 AND type:creature"
 ```
 
 #### Getting Rulings For A Card
+
+You can retrieve the rulings for a card by name using the `rulings` subcommand.
+
+```bash
+# Print all the rulings for the card Winter Orb
+stax scryfall rulings Winter Orb
+```
