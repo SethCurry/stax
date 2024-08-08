@@ -19,20 +19,35 @@ var keywords = []keyword{
 	keywordAnd,
 }
 
+// TokenFamily represents the general category of a token,
+// such as a literal, keyword, or operator.
 type TokenFamily string
 
 const (
-	FamilyOperator = "operator"
-	FamilyLiteral  = "literal"
-	FamilyKeyword  = "keyword"
-	FamilyParen    = "paren"
+	// FamilyOperator represents an operator token such as >, <, =, !=, etc.
+	FamilyOperator TokenFamily = "operator"
+
+	// FamilyLiteral represents a literal token such as a string or number.
+	FamilyLiteral TokenFamily = "literal"
+
+	// FamilyKeyword represents a keyword token such as OR or AND.
+	FamilyKeyword TokenFamily = "keyword"
+
+	// FamilyParen represents a parenthesis token such as ( or ).
+	FamilyParen TokenFamily = "paren"
 )
 
+// Token represents a single token in the query.
 type Token struct {
+	// Family represents the general category of the token.
 	Family TokenFamily
-	Value  string
+
+	// Value represents the actual value of the token from the query.
+	Value string
 }
 
+// isKeyword checks if a given string is a keyword, case-insensitively.
+// It returns true if the string is a keyword, false otherwise.
 func isKeyword(item string) bool {
 	for _, v := range keywords {
 		if strings.ToUpper(item) == string(v) {
@@ -43,6 +58,8 @@ func isKeyword(item string) bool {
 	return false
 }
 
+// tokenLiteralsToKeywords accepts a slice of tokens and returns a new slice
+// with all literal tokens whose value is a keyword converted to a keyword token.
 func tokenLiteralsToKeywords(tokens []Token) []Token {
 	return fp.Map(func(t Token) Token {
 		if isKeyword(t.Value) {
@@ -129,6 +146,9 @@ func lex(t *lexReader) ([]Token, error) {
 	}
 }
 
+// LexString takes a string and returns a slice of tokens.
+// You will typically want to just use ParseQuery, but this can be useful
+// if you want to inspect or manipulate the tokens before parsing.
 func LexString(input string) ([]Token, error) {
 	proc := &lexReader{
 		query: []rune(input),

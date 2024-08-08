@@ -22,10 +22,15 @@ const (
 	opLE operator = "<="
 )
 
+// leaf is a terminal node in the parse tree.
+// These are typically basicLeaf nodes implementing a filter like
+// "name:Static"
 type leaf interface {
 	Predicate() predicate.Card
 }
 
+// node is a single node in the parse tree.
+// These are typically AND or OR nodes.
 type node interface {
 	leaf
 	Left() leaf
