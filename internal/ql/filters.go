@@ -2,12 +2,13 @@ package ql
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/SethCurry/stax/internal/bones/card"
 	"github.com/SethCurry/stax/internal/bones/cardface"
 	"github.com/SethCurry/stax/internal/bones/predicate"
 )
+
+type FieldFilterHandler func(value string) (leaf, error)
 
 func colorsNotInQuery(queryColors []string) []string {
 	notInQuery := []string{}
@@ -51,82 +52,51 @@ func (c *colorQuery) toPredicator() predicate.Card {
 	return card.And(preds...)
 }
 
-func colorsSearch(op operator, value string) (leaf, error) {
-	queryColors := []string{}
-
-	for _, c := range value {
-		queryColors = append(queryColors, string(c))
-	}
-
-	switch op {
-	case opEQ:
-		colorQuery := &colorQuery{
-			MustInclude: queryColors,
-			MustExclude: colorsNotInQuery(queryColors),
-		}
-		return &basicLeaf{
-			predicator: colorQuery.toPredicator(),
-		}, nil
-	case opLT, opLE:
-		colorQuery := &colorQuery{
-			MustExclude: colorsNotInQuery(queryColors),
-		}
-		return &basicLeaf{
-			predicator: colorQuery.toPredicator(),
-		}, nil
-	case opGT, opGE:
-		colorQuery := &colorQuery{
-			MustInclude: queryColors,
-		}
-		return &basicLeaf{
-			predicator: colorQuery.toPredicator(),
-		}, nil
-	}
-
-	return nil, fmt.Errorf("invalid operator: %s", op)
+type FieldFilter struct {
+	Name     string
+	Aliases  []string
+	Handlers map[operator]FieldFilterHandler
 }
 
-func cardNameSearch(op operator, name string) (leaf, error) {
-	switch op {
-	case opEQ:
-		return &basicLeaf{
-			predicator: card.NameContainsFold(name),
-		}, nil
-	}
-
-	return nil, fmt.Errorf("invalid operator: %s", op)
+func (f *FieldFilter) Register(op operator, handler FieldFilterHandler) {
+	f.Handlers[op] = handler
 }
 
-func cmcSearch(op operator, value string) (leaf, error) {
-	parsedValue, err := strconv.ParseFloat(value, 32)
-	if err != nil {
-		return nil, fmt.Errorf("invalid value: %s", value)
+func (f *FieldFilter) MatchesName(name string) bool {
+	if f.Name == name {
+		return true
 	}
 
-	switch op {
-	case opEQ:
-		return &basicLeaf{
-			predicator: card.HasFacesWith(cardface.CmcEQ(float32(parsedValue))),
-		}, nil
-	case opLT:
-		return &basicLeaf{
-			predicator: card.HasFacesWith(cardface.CmcLT(float32(parsedValue))),
-		}, nil
-	case opLE:
-		return &basicLeaf{
-			predicator: card.HasFacesWith(cardface.CmcLTE(float32(parsedValue))),
-		}, nil
-	case opGT:
-		return &basicLeaf{
-			predicator: card.HasFacesWith(cardface.CmcGT(float32(parsedValue))),
-		}, nil
-	case opGE:
-		return &basicLeaf{
-			predicator: card.HasFacesWith(cardface.CmcGTE(float32(parsedValue))),
-		}, nil
+	for _, alias := range f.Aliases {
+		if alias == name {
+			return true
+		}
 	}
 
-	return nil, fmt.Errorf("invalid operator: %s", op)
+	return false
+}
+
+func (f *FieldFilter) Handle(op operator, value string) (leaf, error) {
+	if handler, ok := f.Handlers[op]; ok {
+		return handler(value)
+	}
+
+	return nil, &ErrNoOperationForField{
+		Field:    f.Name,
+		Operator: op,
+	}
+}
+
+// ErrNoOperationForField is returned when a field does not support a given operator.
+// This occurs when parsing a query like "name < Drannith", because there is no
+// less than operator for the name field.
+type ErrNoOperationForField struct {
+	Field    string
+	Operator operator
+}
+
+func (e *ErrNoOperationForField) Error() string {
+	return fmt.Sprintf("field %q has no such operation: %s", e.Field, e.Operator)
 }
 
 func oracleTextSearch(op operator, value string) (leaf, error) {
@@ -138,23 +108,4 @@ func oracleTextSearch(op operator, value string) (leaf, error) {
 	}
 
 	return nil, fmt.Errorf("invalid operator: %s", op)
-}
-
-var filterFieldLookupTable = map[string]filterField{
-	"name":   cardNameSearch,
-	"o":      oracleTextSearch,
-	"oracle": oracleTextSearch,
-	"text":   oracleTextSearch,
-	"cmc":    cmcSearch,
-	"colors": colorsSearch,
-	"c":      colorsSearch,
-}
-
-func getLeaf(filterType string, op operator, value string) (leaf, error) {
-	filterTypeFunc, ok := filterFieldLookupTable[filterType]
-	if !ok {
-		return nil, fmt.Errorf("invalid filter type: %s", filterType)
-	}
-
-	return filterTypeFunc(op, value)
 }
