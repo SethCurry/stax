@@ -3,7 +3,6 @@ package ql
 import (
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/SethCurry/scurry-go/fp"
@@ -23,8 +22,6 @@ const (
 	opLE operator = "<="
 )
 
-type filterField func(operator, string) (leaf, error)
-
 type leaf interface {
 	Predicate() predicate.Card
 }
@@ -37,12 +34,15 @@ type node interface {
 	SetRight(leaf)
 }
 
+// logicNode is a node that holds a logic operator (AND or OR) and two children.
 type logicNode struct {
 	predicator func(...predicate.Card) predicate.Card
 	left       leaf
 	right      leaf
 }
 
+// Predicate returns the predicate for the node,
+// such as ANDing or ORing two predicates together.
 func (l *logicNode) Predicate() predicate.Card {
 	var leftValue predicate.Card
 	var rightValue predicate.Card
@@ -58,22 +58,31 @@ func (l *logicNode) Predicate() predicate.Card {
 	return l.predicator(leftValue, rightValue)
 }
 
+// Left returns the left child of the node.
+// This is required to satisfy the node interface.
 func (l *logicNode) Left() leaf {
 	return l.left
 }
 
+// Right returns the right child of the node.
+// This is required to satisfy the node interface.
 func (l *logicNode) Right() leaf {
 	return l.right
 }
 
+// SetLeft sets the left child of the node.
+// This is required to satisfy the node interface.
 func (l *logicNode) SetLeft(left leaf) {
 	l.left = left
 }
 
+// SetRight sets the right child of the node.
+// This is required to satisfy the node interface.
 func (l *logicNode) SetRight(right leaf) {
 	l.right = right
 }
 
+// newAndNode creates a new AND node.
 func newAndNode(left, right leaf) *logicNode {
 	return &logicNode{
 		predicator: func(cards ...predicate.Card) predicate.Card {
@@ -86,6 +95,7 @@ func newAndNode(left, right leaf) *logicNode {
 	}
 }
 
+// newOrNode creates a new OR node.
 func newOrNode(left, right leaf) *logicNode {
 	return &logicNode{
 		predicator: func(cards ...predicate.Card) predicate.Card {
@@ -96,14 +106,18 @@ func newOrNode(left, right leaf) *logicNode {
 	}
 }
 
+// basicLeaf is a leaf node that holds a single predicate.
 type basicLeaf struct {
 	predicator predicate.Card
 }
 
+// Predicate returns the predicate for the leaf node.
+// This is required to satisfy the leaf interface.
 func (l *basicLeaf) Predicate() predicate.Card {
 	return l.predicator
 }
 
+// newTokenReader creates a new token reader for a slice of tokens.
 func newTokenReader(tokens []Token) *tokenReader {
 	return &tokenReader{
 		tokens: tokens,
@@ -111,11 +125,15 @@ func newTokenReader(tokens []Token) *tokenReader {
 	}
 }
 
+// tokenReader is a helper struct for reading tokens from a slice.
+// It allows iterating over the tokens non-linearly (i.e. by calling next() multiple times).
 type tokenReader struct {
 	tokens []Token
 	index  int
 }
 
+// next returns the next token in the slice and increments the index to move to the next token.
+// It returns nil, false if there are no more tokens to read.
 func (r *tokenReader) next() (*Token, bool) {
 	// return nil if the index is out of bounds
 	// i.e. there are no more tokens to read
@@ -129,24 +147,22 @@ func (r *tokenReader) next() (*Token, bool) {
 	return &ret, true
 }
 
+// hasMore returns true if there are more tokens to read,
+// or false if the index is out of bounds.
 func (r *tokenReader) hasMore() bool {
 	return r.index < len(r.tokens)
 }
 
+// Parser holds a list of fields that have been registered and will be used to parse queries.
+// You can add custom fields to the parser by creating a new *Parser and adding FieldFilters to it.
 type Parser struct {
 	Fields []FieldFilter
 }
 
+// AddField adds a field to the parser.
+// Used to add custom fields to the parser.
 func (p *Parser) AddField(field FieldFilter) {
 	p.Fields = append(p.Fields, field)
-}
-
-type ErrNoField struct {
-	Field string
-}
-
-func (e *ErrNoField) Error() string {
-	return fmt.Sprintf("no such field: %s", e.Field)
 }
 
 func (p *Parser) handleField(field string, op operator, value string) (leaf, error) {
@@ -226,6 +242,7 @@ func (p *Parser) ParseTokens(tokens []Token) (node, error) {
 	return root, nil
 }
 
+// ParseQuery parses a query string and returns a node that can be converted to a bones predicate.
 func (p *Parser) ParseQuery(query string) (node, error) {
 	tokens, err := LexString(query)
 	if err != nil {
@@ -235,57 +252,8 @@ func (p *Parser) ParseQuery(query string) (node, error) {
 	return p.ParseTokens(tokens)
 }
 
-func floatFieldFilterHandler(handler func(value float32) (leaf, error)) FieldFilterHandler {
-	return func(value string) (leaf, error) {
-		f, err := strconv.ParseFloat(value, 64)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse float: %w", err)
-		}
-
-		return handler(float32(f))
-	}
-}
-
-func colorsFieldFilterHandler(handler func([]string) (leaf, error)) FieldFilterHandler {
-	return func(colorString string) (leaf, error) {
-		var colors []string
-
-		for _, value := range colorString {
-			colors = append(colors, string(value))
-		}
-
-		return handler(colors)
-	}
-}
-
-func colorsEQ() FieldFilterHandler {
-	return colorsFieldFilterHandler(func(colors []string) (leaf, error) {
-		colorQuery := &colorQuery{
-			MustInclude: colors,
-			MustExclude: colorsNotInQuery(colors),
-		}
-		return &basicLeaf{predicator: colorQuery.toPredicator()}, nil
-	})
-}
-
-func colorsLT() FieldFilterHandler {
-	return colorsFieldFilterHandler(func(colors []string) (leaf, error) {
-		colorQuery := &colorQuery{
-			MustExclude: colorsNotInQuery(colors),
-		}
-		return &basicLeaf{predicator: colorQuery.toPredicator()}, nil
-	})
-}
-
-func colorsGT() FieldFilterHandler {
-	return colorsFieldFilterHandler(func(colors []string) (leaf, error) {
-		colorQuery := &colorQuery{
-			MustInclude: colors,
-		}
-		return &basicLeaf{predicator: colorQuery.toPredicator()}, nil
-	})
-}
-
+// DefaultParser is a parser with the standard set of fields already registered.
+// This is the parser that you typically want to use.
 var DefaultParser = &Parser{
 	Fields: []FieldFilter{
 		{
@@ -308,19 +276,19 @@ var DefaultParser = &Parser{
 		{
 			Name: "cmc",
 			Handlers: map[operator]FieldFilterHandler{
-				opEQ: floatFieldFilterHandler(func(value float32) (leaf, error) {
+				opEQ: FloatFieldFilterHandler(func(value float32) (leaf, error) {
 					return &basicLeaf{predicator: card.HasFacesWith(cardface.CmcEQ(value))}, nil
 				}),
-				opLT: floatFieldFilterHandler(func(value float32) (leaf, error) {
+				opLT: FloatFieldFilterHandler(func(value float32) (leaf, error) {
 					return &basicLeaf{predicator: card.HasFacesWith(cardface.CmcLT(value))}, nil
 				}),
-				opLE: floatFieldFilterHandler(func(value float32) (leaf, error) {
+				opLE: FloatFieldFilterHandler(func(value float32) (leaf, error) {
 					return &basicLeaf{predicator: card.HasFacesWith(cardface.CmcLTE(value))}, nil
 				}),
-				opGT: floatFieldFilterHandler(func(value float32) (leaf, error) {
+				opGT: FloatFieldFilterHandler(func(value float32) (leaf, error) {
 					return &basicLeaf{predicator: card.HasFacesWith(cardface.CmcGT(value))}, nil
 				}),
-				opGE: floatFieldFilterHandler(func(value float32) (leaf, error) {
+				opGE: FloatFieldFilterHandler(func(value float32) (leaf, error) {
 					return &basicLeaf{predicator: card.HasFacesWith(cardface.CmcGTE(value))}, nil
 				}),
 			},
