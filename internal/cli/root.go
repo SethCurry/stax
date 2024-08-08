@@ -17,7 +17,7 @@ type Root struct {
 	// The scryfall command.
 	Scryfall ScryfallCmd `cmd:"" help:"Scryfall API commands"`
 
-	Oracle BonesCmd `cmd:"" help:"Database commands"`
+	Bones BonesCmd `cmd:"" help:"Database commands"`
 
 	API APICmd `cmd:"" help:"Start the API server."`
 	// The rules command

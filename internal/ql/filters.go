@@ -13,16 +13,21 @@ import (
 // a given value.  These are typically registered with a FieldFilter.
 type FieldFilterHandler func(value string) (leaf, error)
 
+// FieldFilter represents a field in the query and the associated handlers
+// for each operation that field supports.
 type FieldFilter struct {
 	Name     string
 	Aliases  []string
 	Handlers map[operator]FieldFilterHandler
 }
 
+// Register registers a handler for a given operator.
 func (f *FieldFilter) Register(op operator, handler FieldFilterHandler) {
 	f.Handlers[op] = handler
 }
 
+// MatchesName checks if the field filter has the provided name, or if
+// the provided name is an alias.
 func (f *FieldFilter) MatchesName(name string) bool {
 	if f.Name == name {
 		return true
@@ -37,6 +42,7 @@ func (f *FieldFilter) MatchesName(name string) bool {
 	return false
 }
 
+// Handle calls the handler for the given operator and value.
 func (f *FieldFilter) Handle(op operator, value string) (leaf, error) {
 	if handler, ok := f.Handlers[op]; ok {
 		return handler(value)

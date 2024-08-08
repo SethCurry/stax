@@ -11,6 +11,7 @@ import (
 	"github.com/SethCurry/stax/internal/bones/predicate"
 )
 
+// operator represents a comparison operator in the query.
 type operator string
 
 const (
